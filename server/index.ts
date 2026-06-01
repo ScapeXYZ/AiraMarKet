@@ -7,6 +7,8 @@ import { SignalIngestionService } from './services/signal_ingestion';
 import * as http from 'http';
 import { TransparencyLogger } from './services/transparency_logger';
 
+(global as any).pendingMarkets = [];
+
 console.log("🚀 Starting AIRA Markets Autonomous Backend...");
 
 cryptoAgent;
@@ -44,6 +46,7 @@ const server = http.createServer((req, res) => {
                     payload.txHash,
                     payload.title,
                     payload.category,
+                    payload.inputSignals,
                     payload.reason,
                     payload.confidence,
                     payload.decision
@@ -55,10 +58,41 @@ const server = http.createServer((req, res) => {
                 res.end('Invalid JSON');
             }
         });
-    } else {
-        res.writeHead(404);
-        res.end('Not Found');
+        return;
     }
+
+    if (req.method === 'POST' && req.url === '/resolve-market') {
+        let body = '';
+        req.on('data', chunk => body += chunk.toString());
+        req.on('end', async () => {
+            try {
+                const { mantleService } = await import('./services/mantle_service');
+                const payload = JSON.parse(body);
+                const result = await mantleService.resolveMarket(Number(payload.marketId), payload.outcome === true);
+                if (result.success) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(result));
+                } else {
+                    res.writeHead(500);
+                    res.end(JSON.stringify(result));
+                }
+            } catch (err) {
+                res.writeHead(400);
+                res.end('Failed');
+            }
+        });
+        return;
+    }
+
+    if (req.method === 'GET' && req.url === '/pending-markets') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(global.pendingMarkets || []));
+        global.pendingMarkets = []; // Clear after sending to avoid duplicates
+        return;
+    }
+
+    res.writeHead(404);
+    res.end('Not Found');
 });
 
 server.listen(3001, () => {

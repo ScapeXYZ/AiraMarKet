@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export class TransparencyLogger {
-    static logApproval(txHash: string, title: string, category: string, reason: string, confidence: number, decision: string) {
+    static logApproval(txHash: string, title: string, category: string, inputSignals: string, reason: string, confidence: number, decision: string) {
         const logDir = path.join(__dirname, '../../logs');
         if (!fs.existsSync(logDir)) {
             fs.mkdirSync(logDir, { recursive: true });
@@ -16,6 +16,7 @@ export class TransparencyLogger {
             txHash,
             marketTitle: title,
             category: category,
+            inputSignals: inputSignals,
             aiReasoning: reason,
             confidenceScore: confidence,
             finalApprovalDecision: decision

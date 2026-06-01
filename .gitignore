@@ -59,3 +59,4 @@ cache/
 *.njsproj
 *.sln
 *.sw?
+server/logs/

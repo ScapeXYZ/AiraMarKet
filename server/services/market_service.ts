@@ -19,6 +19,12 @@ export class MarketService {
             ...proposal,
             status: 'PENDING_APPROVAL'
         });
+
+        // Store into global memory for frontend polling
+        if (!(global as any).pendingMarkets) {
+            (global as any).pendingMarkets = [];
+        }
+        (global as any).pendingMarkets.push(proposal);
     }
 }
 

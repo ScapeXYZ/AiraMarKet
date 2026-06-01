@@ -114,7 +114,11 @@ function App() {
         setWalletAddress(address);
         setProvider(browserProvider);
         
-        const contractAddress = import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+        const contractAddress = import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS;
+        if (!contractAddress) {
+           console.error("VITE_MANTLE_CONTRACT_ADDRESS is not set in environment variables!");
+           return;
+        }
         const abi = [
           "function buyYes(uint256 _marketId) external payable",
           "function buyNo(uint256 _marketId) external payable",
@@ -137,27 +141,7 @@ function App() {
   const [activeFeedFilter, setActiveFeedFilter] = useState('ACTIVE');
 
   // Global Active Trading Context (Swapped by Feed, Landing, and Creator Actions)
-  const [activeMarket, setActiveMarket] = useState({
-    title: 'ETH 2.0 Hard Fork Success?',
-    confidence: '98.2',
-    impliedPrice: 0.84,
-    closesIn: '04H 22M 11S',
-    vol: '$1.2M',
-    openInterest: '$458K',
-    drift: '+0.12%',
-    yesPrice: 0.84,
-    noPrice: 0.16
-  });
-
-  // Ticking index trackers
-  const [btcPrice, setBtcPrice] = useState(64231.50);
-  const [btcPercent, setBtcPercent] = useState(2.4);
-  const [ethPrice, setEthPrice] = useState(3450.12);
-  const [ethPercent, setEthPercent] = useState(1.8);
-  const [aiSentiment, setAiSentiment] = useState(88);
-  const [volume, setVolume] = useState(1.2);
-  const [blockNum, setBlockNum] = useState(19432204);
-  const [gasPrice, setGasPrice] = useState(14);
+  const [activeMarket, setActiveMarket] = useState({});
 
   // Dynamic terminal trading state
   const [tradeSize, setTradeSize] = useState(500);
@@ -167,8 +151,7 @@ function App() {
   const [activeChartRange, setActiveChartRange] = useState('4H'); // '1H', '4H', '1D', '1W'
   const [pulsingRowIndex, setPulsingRowIndex] = useState(null);
   
-  // Real countdown states for Closing Market
-  const [countdown, setCountdown] = useState({ hours: 4, minutes: 22, seconds: 11 });
+
 
   // Core Feed Column categories definition
   const feedCategories = [
@@ -178,283 +161,7 @@ function App() {
     { id: 'POLITICS', label: 'Politics Feed', icon: 'gavel', color: 'text-bullish' }
   ];
 
-  // Prepopulated Cinematic scroll-snap Feed Cards across Tech, Crypto, Sports, Finance, Politics with dynamic statuses and circular passport thumbnails
-  const [feedCards, setFeedCards] = useState([
-    // TECH
-    {
-      id: 1,
-      title: "Will AI prove P=NP by 2026?",
-      volume: "$2.4M",
-      yesProb: 64,
-      noProb: 36,
-      yesPrice: 0.64,
-      noPrice: 0.36,
-      confidence: "88.0",
-      openInterest: "$210K",
-      drift: "+0.45%",
-      category: "TECH",
-      status: "ACTIVE",
-      passport: "https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuD06jipcz6lDwedeg3gu0HZ3KBKuSiAxrDY4CT_5lv8v4gvcOdNMIJqgor8ahlPIPQboldHM0N_XSTxFHVJBrZEem6Lrf-galrGJLoNzNNwEjEaRQJFtG9QGep54wFpWJzpw3nYW7Wp4obu1EUWrGt7uKnT99ybLCUs8d2YpAYCwapzUHj2dHOZvM_nC6JZhO8flSgr3eBBoEQmX7J_VM0u-YexaJ73jG6khFrgUvxdEs6sMnici0cGU0FYq1k0H0PvzuXwt-A7Fcw",
-      nodeName: "Oracle Alpha"
-    },
-    {
-      id: 2,
-      title: "Will OpenAI announce GPT-5 before October?",
-      volume: "$9.4M",
-      yesProb: 58,
-      noProb: 42,
-      yesPrice: 0.58,
-      noPrice: 0.42,
-      confidence: "91.2",
-      openInterest: "$580K",
-      drift: "+1.20%",
-      category: "TECH",
-      status: "COMING",
-      passport: "https://images.unsplash.com/photo-1684369175833-31f0cf0f23cb?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuAjJrYNIrwjx60oGN4JQ7V5opgwTqfSonzeEQy6cwpVdPFadQtUEwRJP5zWfTLfCBZiVeGfLw3Tu9gYLimllhOCetMUEqatBKxSRnO-8yuq3KEHeWag4ZgaxheS-sdbXSNZ3MGv4-Hd_uVHcACkuthADMQ8Z4S8ozwW6EqT7APT-pKxLTvdDx33p_Uk35_l2KUu6BXFevT6lLLKfbPwjWeB_Ck3YqlHBPKcY14k8n-PXbUbJkCgDbGA4Nms9qjFMxZoyoDHxOir0PY",
-      nodeName: "AI Synthesizer"
-    },
-    {
-      id: 11,
-      title: "Will Apple launch its first fully foldable iPhone in 2025?",
-      volume: "$14.1M",
-      yesProb: 40,
-      noProb: 60,
-      yesPrice: 0.40,
-      noPrice: 0.60,
-      confidence: "87.5",
-      openInterest: "$790K",
-      drift: "-0.10%",
-      category: "TECH",
-      status: "ENDED",
-      passport: "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuAjJrYNIrwjx60oGN4JQ7V5opgwTqfSonzeEQy6cwpVdPFadQtUEwRJP5zWfTLfCBZiVeGfLw3Tu9gYLimllhOCetMUEqatBKxSRnO-8yuq3KEHeWag4ZgaxheS-sdbXSNZ3MGv4-Hd_uVHcACkuthADMQ8Z4S8ozwW6EqT7APT-pKxLTvdDx33p_Uk35_l2KUu6BXFevT6lLLKfbPwjWeB_Ck3YqlHBPKcY14k8n-PXbUbJkCgDbGA4Nms9qjFMxZoyoDHxOir0PY",
-      nodeName: "Venture Node"
-    },
-    // CRYPTO
-    {
-      id: 3,
-      title: "BTC to cross $150k before July 2025?",
-      volume: "$18.9M",
-      yesProb: 12,
-      noProb: 88,
-      yesPrice: 0.12,
-      noPrice: 0.88,
-      confidence: "89.4",
-      openInterest: "$1.4M",
-      drift: "+1.18%",
-      category: "CRYPTO",
-      status: "COMING",
-      passport: "https://images.unsplash.com/photo-1516245834210-c4c142787335?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuAjJrYNIrwjx60oGN4JQ7V5opgwTqfSonzeEQy6cwpVdPFadQtUEwRJP5zWfTLfCBZiVeGfLw3Tu9gYLimllhOCetMUEqatBKxSRnO-8yuq3KEHeWag4ZgaxheS-sdbXSNZ3MGv4-Hd_uVHcACkuthADMQ8Z4S8ozwW6EqT7APT-pKxLTvdDx33p_Uk35_l2KUu6BXFevT6lLLKfbPwjWeB_Ck3YqlHBPKcY14k8n-PXbUbJkCgDbGA4Nms9qjFMxZoyoDHxOir0PY",
-      nodeName: "DeFi Pulse"
-    },
-    {
-      id: 4,
-      title: "Will Solana active addresses exceed 5 million in Q3?",
-      volume: "$4.1M",
-      yesProb: 62,
-      noProb: 38,
-      yesPrice: 0.62,
-      noPrice: 0.38,
-      confidence: "94.0",
-      openInterest: "$420K",
-      drift: "+0.85%",
-      category: "CRYPTO",
-      status: "ACTIVE",
-      passport: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuAjJrYNIrwjx60oGN4JQ7V5opgwTqfSonzeEQy6cwpVdPFadQtUEwRJP5zWfTLfCBZiVeGfLw3Tu9gYLimllhOCetMUEqatBKxSRnO-8yuq3KEHeWag4ZgaxheS-sdbXSNZ3MGv4-Hd_uVHcACkuthADMQ8Z4S8ozwW6EqT7APT-pKxLTvdDx33p_Uk35_l2KUu6BXFevT6lLLKfbPwjWeB_Ck3YqlHBPKcY14k8n-PXbUbJkCgDbGA4Nms9qjFMxZoyoDHxOir0PY",
-      nodeName: "SOL Scanner"
-    },
-    {
-      id: 12,
-      title: "Will ETH spot ETFs achieve $1B net inflow in first 10 days?",
-      volume: "$22.4M",
-      yesProb: 88,
-      noProb: 12,
-      yesPrice: 0.88,
-      noPrice: 0.12,
-      confidence: "95.0",
-      openInterest: "$2.1M",
-      drift: "+3.40%",
-      category: "CRYPTO",
-      status: "ENDED",
-      passport: "https://images.unsplash.com/photo-1622790698141-94e304bcbbad?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuAjJrYNIrwjx60oGN4JQ7V5opgwTqfSonzeEQy6cwpVdPFadQtUEwRJP5zWfTLfCBZiVeGfLw3Tu9gYLimllhOCetMUEqatBKxSRnO-8yuq3KEHeWag4ZgaxheS-sdbXSNZ3MGv4-Hd_uVHcACkuthADMQ8Z4S8ozwW6EqT7APT-pKxLTvdDx33p_Uk35_l2KUu6BXFevT6lLLKfbPwjWeB_Ck3YqlHBPKcY14k8n-PXbUbJkCgDbGA4Nms9qjFMxZoyoDHxOir0PY",
-      nodeName: "Mantle Agent"
-    },
-    // SPORTS
-    {
-      id: 5,
-      title: "Will Real Madrid win the Champions League final?",
-      volume: "$6.2M",
-      yesProb: 58,
-      noProb: 42,
-      yesPrice: 0.58,
-      noPrice: 0.42,
-      confidence: "82.4",
-      openInterest: "$480K",
-      drift: "-0.15%",
-      category: "SPORTS",
-      status: "ENDED",
-      passport: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
-      nodeName: "Oracle Sports"
-    },
-    {
-      id: 6,
-      title: "Will Ferrari secure the Constructor Championship?",
-      volume: "$2.8M",
-      yesProb: 34,
-      noProb: 66,
-      yesPrice: 0.34,
-      noPrice: 0.66,
-      confidence: "76.0",
-      openInterest: "$150K",
-      drift: "+0.10%",
-      category: "SPORTS",
-      status: "ACTIVE",
-      passport: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
-      nodeName: "Race Predictor"
-    },
-    {
-      id: 13,
-      title: "Will the FIFA 2030 host country secure all matches in Europe?",
-      volume: "$1.9M",
-      yesProb: 20,
-      noProb: 80,
-      yesPrice: 0.20,
-      noPrice: 0.80,
-      confidence: "74.0",
-      openInterest: "$95K",
-      drift: "+0.00%",
-      category: "SPORTS",
-      status: "COMING",
-      passport: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
-      nodeName: "Telemetry Node"
-    },
-    // FINANCE -> REALLOCATED
-    {
-      id: 7,
-      title: "Will the Fed cut interest rates by 50bps or more in September?",
-      volume: "$12.4M",
-      yesProb: 68,
-      noProb: 32,
-      yesPrice: 0.68,
-      noPrice: 0.32,
-      confidence: "92.0",
-      openInterest: "$920K",
-      drift: "+1.05%",
-      category: "POLITICS",
-      status: "ACTIVE",
-      passport: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuD06jipcz6lDwedeg3gu0HZ3KBKuSiAxrDY4CT_5lv8v4gvcOdNMIJqgor8ahlPIPQboldHM0N_XSTxFHVJBrZEem6Lrf-galrGJLoNzNNwEjEaRQJFtG9QGep54wFpWJzpw3nYW7Wp4obu1EUWrGt7uKnT99ybLCUs8d2YpAYCwapzUHj2dHOZvM_nC6JZhO8flSgr3eBBoEQmX7J_VM0u-YexaJ73jG6khFrgUvxdEs6sMnici0cGU0FYq1k0H0PvzuXwt-A7Fcw",
-      nodeName: "Macro Oracle"
-    },
-    {
-      id: 8,
-      title: "Will Gold price cross $2,800/oz before Q4?",
-      volume: "$8.7M",
-      yesProb: 45,
-      noProb: 55,
-      yesPrice: 0.45,
-      noPrice: 0.55,
-      confidence: "88.0",
-      openInterest: "$610K",
-      drift: "-0.40%",
-      category: "CRYPTO",
-      status: "COMING",
-      passport: "https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuD06jipcz6lDwedeg3gu0HZ3KBKuSiAxrDY4CT_5lv8v4gvcOdNMIJqgor8ahlPIPQboldHM0N_XSTxFHVJBrZEem6Lrf-galrGJLoNzNNwEjEaRQJFtG9QGep54wFpWJzpw3nYW7Wp4obu1EUWrGt7uKnT99ybLCUs8d2YpAYCwapzUHj2dHOZvM_nC6JZhO8flSgr3eBBoEQmX7J_VM0u-YexaJ73jG6khFrgUvxdEs6sMnici0cGU0FYq1k0H0PvzuXwt-A7Fcw",
-      nodeName: "Asset Engine"
-    },
-    {
-      id: 14,
-      title: "Will NVIDIA Q2 total revenues beat high-end target of $33.2B?",
-      volume: "$18.4M",
-      yesProb: 55,
-      noProb: 45,
-      yesPrice: 0.55,
-      noPrice: 0.45,
-      confidence: "91.0",
-      openInterest: "$1.2M",
-      drift: "+1.05%",
-      category: "TECH",
-      status: "ENDED",
-      passport: "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuD06jipcz6lDwedeg3gu0HZ3KBKuSiAxrDY4CT_5lv8v4gvcOdNMIJqgor8ahlPIPQboldHM0N_XSTxFHVJBrZEem6Lrf-galrGJLoNzNNwEjEaRQJFtG9QGep54wFpWJzpw3nYW7Wp4obu1EUWrGt7uKnT99ybLCUs8d2YpAYCwapzUHj2dHOZvM_nC6JZhO8flSgr3eBBoEQmX7J_VM0u-YexaJ73jG6khFrgUvxdEs6sMnici0cGU0FYq1k0H0PvzuXwt-A7Fcw",
-      nodeName: "Finance Node"
-    },
-    // POLITICS
-    {
-      id: 9,
-      title: "Will the US election resolution happen within 24 hours of closing?",
-      volume: "$45.1M",
-      yesProb: 81,
-      noProb: 19,
-      yesPrice: 0.81,
-      noPrice: 0.19,
-      confidence: "96.4",
-      openInterest: "$4.8M",
-      drift: "+2.10%",
-      category: "POLITICS",
-      status: "ACTIVE",
-      passport: "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
-      nodeName: "Capital Watch"
-    },
-    {
-      id: 10,
-      title: "Will the UK Prime Minister call for a snap election before 2026?",
-      volume: "$5.9M",
-      yesProb: 28,
-      noProb: 72,
-      yesPrice: 0.28,
-      noPrice: 0.72,
-      confidence: "84.2",
-      openInterest: "$340K",
-      drift: "-0.05%",
-      category: "POLITICS",
-      status: "COMING",
-      passport: "https://images.unsplash.com/photo-1513635269975-59663e0ca1ad?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
-      nodeName: "Westminster Node"
-    },
-    {
-      id: 15,
-      title: "Will France snap legislative assembly elections trigger new coalition in July?",
-      volume: "$11.4M",
-      yesProb: 65,
-      noProb: 35,
-      yesPrice: 0.65,
-      noPrice: 0.35,
-      confidence: "89.0",
-      openInterest: "$540K",
-      drift: "+1.15%",
-      category: "POLITICS",
-      status: "ENDED",
-      passport: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=200",
-      bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeName: "Westminster Node"
-    }
-  ]);
+  const [feedCards, setFeedCards] = useState([]);
 
   // Hook to fetch live markets
   useEffect(() => {
@@ -507,48 +214,14 @@ function App() {
 
   // Chat Feed messages state
   const [chatText, setChatText] = useState('');
-  const [messages, setMessages] = useState([
-    { 
-      id: 1, 
-      type: 'bot', 
-      sender: 'AIRA_ORACLE', 
-      time: 'JUST NOW', 
-      content: 'Neural drift suggests a heavy breakthrough in T-minus 12 mins. Probability vectoring @ 88%.' 
-    },
-    { 
-      id: 2, 
-      type: 'user', 
-      sender: 'TradeWhale_77', 
-      time: '2M AGO', 
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDy-Rp6X47D4GrUgcYgFr_wCY-ONNks8QeeMmVHeeav22ogh9_UZlVecag4FX6HkaqaLkQPREErw9EzEtPl6Y_pp_lTRkyg-psP3dzBSS1Ed3ADSoMApQGQiuRFMssDqYfRKwF72e1x6TRsTx59mOZfwXPNvESqW2vAxQc2hmgjXC2oMBlLdJjEjC9wnRDRycGjCmeicFr6HaLsn_de58aSytyJnQ4NYWCnfQtldaLMwrIc9A2b7MdxcfZqoeFdQfEyLvXIyJESDYM',
-      content: 'Just dropped 50k on YES. The technicals are too clean to ignore.' 
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
 
   // AI Market Creator chat states
-  const [creatorInput, setCreatorInput] = useState('Create a market for the next Starship orbital flight success');
+  const [creatorInput, setCreatorInput] = useState('');
   const [isProcessingCreator, setIsProcessingCreator] = useState(false);
   const [launchingMarket, launchingMarketSet] = useState(null); // Tracks market currently in L1 rocket launch status
   const [selectedSuggestionTab, setSelectedSuggestionTab] = useState('ALL');
-  const [creatorMessages, setCreatorMessages] = useState([
-    {
-      id: 1,
-      type: 'user',
-      content: 'Create a market for the next Starship orbital flight success'
-    },
-    {
-      id: 2,
-      type: 'bot',
-      isProposal: true,
-      title: 'Will SpaceX Starship Integrated Flight Test 4 achieve its primary orbital objectives?',
-      expiry: 'Q3 2024',
-      category: 'SPACE',
-      resolves: 'ORACLE',
-      likelihood: '68% CONF.',
-      yesProb: 68,
-      noProb: 32
-    }
-  ]);
+  const [creatorMessages, setCreatorMessages] = useState([]);
 
   // Day & Night mode toggling core logic
   const toggleTheme = () => {
@@ -564,7 +237,7 @@ function App() {
   };
 
   // Quick trade activation helper from Feed/Landing/Creator
-  const activateTerminalTrade = (marketTitle, yesPrice, noPrice, confidence, vol, openInterest, drift, realId = 1) => {
+  const activateTerminalTrade = (marketTitle, yesPrice, noPrice, confidence, vol, openInterest, drift, realId) => {
     setActiveMarket({
       realId: realId,
       title: marketTitle,
@@ -599,7 +272,45 @@ function App() {
     setChatText('');
   };
 
-  // Handle AI Market Creator chat structure
+  // Fetch Real AI Market Suggestions from backend
+  useEffect(() => {
+    if (currentView !== 'creator') return;
+    
+    const fetchPending = async () => {
+      try {
+        const res = await fetch('http://localhost:3001/pending-markets');
+        const data = await res.json();
+        
+        if (data && data.length > 0) {
+          data.forEach(proposal => {
+            const botMessage = {
+              id: Date.now() + Math.random(),
+              type: 'bot',
+              isProposal: true,
+              title: proposal.title,
+              expiry: proposal.expiry,
+              category: proposal.category,
+              resolves: 'ORACLE',
+              likelihood: `${Math.round(proposal.confidence * 100)}% CONF.`,
+              yesProb: Math.round(proposal.confidence * 100),
+              noProb: 100 - Math.round(proposal.confidence * 100),
+              inputSignals: proposal.inputSignals,
+              reason: proposal.reason
+            };
+            setCreatorMessages(prev => [...prev, botMessage]);
+          });
+        }
+      } catch (err) {
+        console.error("No live AI suggestions available");
+      }
+    };
+    
+    // Poll for new live suggestions
+    const interval = setInterval(fetchPending, 5000);
+    return () => clearInterval(interval);
+  }, [currentView]);
+
+  // Handle manual creator submission
   const handleSendCreator = (e) => {
     e.preventDefault();
     if (!creatorInput.trim()) return;
@@ -611,65 +322,9 @@ function App() {
     };
 
     setCreatorMessages(prev => [...prev, userMessage]);
-    setIsProcessingCreator(true);
-
-    const inputLower = creatorInput.toLowerCase();
     setCreatorInput('');
-
-    setTimeout(() => {
-      // Dynamic Neural Market structures
-      let proposedTitle = `Will ${userMessage.content.replace(/create a market for/gi, '').trim()} occur successfully before 2026?`;
-      let proposedCategory = 'TECH';
-      let proposedExpiry = 'Q4 2025';
-      let proposedResolves = 'ORACLE';
-      let yesProb = 50;
-      let noProb = 50;
-
-      if (inputLower.includes('btc') || inputLower.includes('bitcoin')) {
-        proposedTitle = 'Will Bitcoin surpass $100,000 by December 31st, 2024?';
-        proposedCategory = 'CRYPTO';
-        proposedExpiry = 'Q4 2024';
-        yesProb = 74;
-        noProb = 26;
-      } else if (inputLower.includes('solana') || inputLower.includes('sol')) {
-        proposedTitle = 'Will Solana active addresses exceed 5 million in Q3?';
-        proposedCategory = 'CRYPTO';
-        proposedExpiry = 'Q3 2024';
-        yesProb = 62;
-        noProb = 38;
-      } else if (inputLower.includes('election') || inputLower.includes('president') || inputLower.includes('us')) {
-        proposedTitle = 'Will the US election resolution happen within 24 hours of closing?';
-        proposedCategory = 'POLITICS';
-        proposedExpiry = 'Q4 2024';
-        yesProb = 81;
-        noProb = 19;
-      } else if (inputLower.includes('apple') || inputLower.includes('gpt') || inputLower.includes('openai') || inputLower.includes('ai')) {
-        proposedTitle = 'Will OpenAI announce GPT-5 before October 2024?';
-        proposedCategory = 'TECH';
-        proposedExpiry = 'Q3 2024';
-        yesProb = 58;
-        noProb = 42;
-      }
-
-      const botMessage = {
-        id: Date.now() + 1,
-        type: 'bot',
-        isProposal: true,
-        title: proposedTitle,
-        expiry: proposedExpiry,
-        category: proposedCategory,
-        resolves: proposedResolves,
-        likelihood: `${yesProb}% CONF.`,
-        yesProb: yesProb,
-        noProb: noProb
-      };
-
-      setCreatorMessages(prev => [...prev, botMessage]);
-      setIsProcessingCreator(false);
-    }, 1200);
   };
 
-  // Handle select suggestion instantly populates and submits the proposal
   const handleSelectSuggestion = (promptText) => {
     setCreatorInput(promptText);
 
@@ -680,63 +335,9 @@ function App() {
     };
 
     setCreatorMessages(prev => [...prev, userMessage]);
-    setIsProcessingCreator(true);
-
-    const inputLower = promptText.toLowerCase();
     setCreatorInput('');
-
-    setTimeout(() => {
-      // Dynamic Neural Market structures
-      let proposedTitle = `Will ${promptText.replace(/create a market for/gi, '').trim()} occur successfully before 2026?`;
-      let proposedCategory = 'TECH';
-      let proposedExpiry = 'Q4 2025';
-      let proposedResolves = 'ORACLE';
-      let yesProb = 50;
-      let noProb = 50;
-
-      if (inputLower.includes('btc') || inputLower.includes('bitcoin')) {
-        proposedTitle = 'Will Bitcoin surpass $100,000 by December 31st, 2024?';
-        proposedCategory = 'CRYPTO';
-        proposedExpiry = 'Q4 2024';
-        yesProb = 74;
-        noProb = 26;
-      } else if (inputLower.includes('solana') || inputLower.includes('sol')) {
-        proposedTitle = 'Will Solana active addresses exceed 5 million in Q3?';
-        proposedCategory = 'CRYPTO';
-        proposedExpiry = 'Q3 2024';
-        yesProb = 62;
-        noProb = 38;
-      } else if (inputLower.includes('election') || inputLower.includes('president') || inputLower.includes('us')) {
-        proposedTitle = 'Will the US election resolution happen within 24 hours of closing?';
-        proposedCategory = 'POLITICS';
-        proposedExpiry = 'Q4 2024';
-        yesProb = 81;
-        noProb = 19;
-      } else if (inputLower.includes('apple') || inputLower.includes('gpt') || inputLower.includes('openai') || inputLower.includes('ai')) {
-        proposedTitle = 'Will OpenAI announce GPT-5 before October 2024?';
-        proposedCategory = 'TECH';
-        proposedExpiry = 'Q3 2024';
-        yesProb = 58;
-        noProb = 42;
-      }
-
-      const botMessage = {
-        id: Date.now() + 1,
-        type: 'bot',
-        isProposal: true,
-        title: proposedTitle,
-        expiry: proposedExpiry,
-        category: proposedCategory,
-        resolves: proposedResolves,
-        likelihood: `${yesProb}% CONF.`,
-        yesProb: yesProb,
-        noProb: noProb
-      };
-
-      setCreatorMessages(prev => [...prev, botMessage]);
-      setIsProcessingCreator(false);
-    }, 1200);
   };
+
 
   // Launch on-chain via Connected Wallet
   const handleLaunchOnChain = async (market) => {
@@ -769,7 +370,8 @@ function App() {
             txHash: tx.hash,
             title: market.title,
             category: market.category,
-            reason: "AI generated from live web signals across ESPN/CoinGecko/HackerNews",
+            inputSignals: market.inputSignals || "Manual Override",
+            reason: market.reason || "Manual Deployment",
             confidence: market.likelihood || "80%",
             decision: "User physically signed and approved via MetaMask"
         })
@@ -787,91 +389,14 @@ function App() {
     }
   };
 
-  // Fluctuating ticker values & ticking clocks
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // BTC Fluctuation
-      if (Math.random() > 0.5) {
-        const change = (Math.random() - 0.5) * 10;
-        setBtcPrice(prev => +(prev + change).toFixed(2));
-        setBtcPercent(prev => +(prev + (change / 64231.5) * 100).toFixed(2));
-      }
-      
-      // ETH Fluctuation
-      if (Math.random() > 0.5) {
-        const change = (Math.random() - 0.5) * 2;
-        setEthPrice(prev => +(prev + change).toFixed(2));
-        setEthPercent(prev => +(prev + (change / 3450.12) * 100).toFixed(2));
-      }
 
-      // Sentiment Fluctuation
-      if (Math.random() > 0.8) {
-        setAiSentiment(prev => {
-          const change = Math.floor((Math.random() - 0.5) * 4);
-          const newVal = prev + change;
-          return newVal > 100 ? 100 : newVal < 0 ? 0 : newVal;
-        });
-      }
-
-      // Block Number increment
-      if (Math.random() > 0.7) {
-        setBlockNum(prev => prev + 1);
-      }
-
-      // Gas Fluctuation
-      if (Math.random() > 0.6) {
-        setGasPrice(prev => {
-          const change = Math.floor((Math.random() - 0.5) * 3);
-          const newVal = prev + change;
-          return newVal < 5 ? 5 : newVal > 60 ? 60 : newVal;
-        });
-      }
-
-      // Ticker pulse order book row
-      if (Math.random() > 0.4) {
-        const randomIndex = Math.floor(Math.random() * 4); // 4 rows
-        setPulsingRowIndex(randomIndex);
-        setTimeout(() => setPulsingRowIndex(null), 800);
-      }
-
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Timer Tick implementation
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        let s = prev.seconds - 1;
-        let m = prev.minutes;
-        let h = prev.hours;
-
-        if (s < 0) {
-          s = 59;
-          m -= 1;
-        }
-        if (m < 0) {
-          m = 59;
-          h -= 1;
-        }
-        if (h < 0) {
-          h = 0; m = 0; s = 0;
-        }
-        return { hours: h, minutes: m, seconds: s };
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // Position & payout calculator logic bound to active market context
   const activeSharePrice = selectedDirection === 'YES' ? activeMarket.yesPrice : activeMarket.noPrice;
   const estShares = +(tradeSize / activeSharePrice).toFixed(2);
   const potentialPayout = +(estShares * 1.00).toFixed(2);
 
-  // Formatting utility
-  const formatTime = (num) => String(num).padStart(2, '0');
+
 
   // Multi-column smooth scrolling anchor helper
   const scrollToColumn = (colId) => {
@@ -982,40 +507,6 @@ function App() {
       {/* VIEW 1: LANDING PAGE */}
       {currentView === 'landing' && (
         <>
-          {/* Marquee Ticker */}
-          <div className="fixed top-20 left-0 w-full z-40 bg-surface border-b border-outline/20 h-10 flex items-center marquee-container overflow-hidden">
-            <div className="flex whitespace-nowrap animate-marquee items-center gap-12 px-6">
-              <div className="flex items-center gap-3 font-medium text-[11px] tracking-widest uppercase">
-                <span className="text-on-surface-variant">BTC/USD</span>
-                <span className="text-primary font-semibold">
-                  {btcPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })} 
-                  <span className="text-[10px] opacity-70 ml-1">({btcPercent >= 0 ? '+' : ''}{btcPercent}%)</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-3 font-medium text-[11px] tracking-widest uppercase">
-                <span className="text-on-surface-variant">ETH/USD</span>
-                <span className="text-primary font-semibold">
-                  {ethPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })} 
-                  <span className="text-[10px] opacity-70 ml-1">({ethPercent >= 0 ? '+' : ''}{ethPercent}%)</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-3 font-medium text-[11px] tracking-widest uppercase">
-                <span className="text-on-surface-variant">AI SENTIMENT</span>
-                <span className="text-on-surface font-semibold">OPTIMISTIC <span className="text-primary">({aiSentiment}%)</span></span>
-              </div>
-              <div className="flex items-center gap-3 font-medium text-[11px] tracking-widest uppercase">
-                <span className="text-on-surface-variant">VOL</span>
-                <span className="text-on-surface font-semibold">${volume}B</span>
-              </div>
-              {/* Duplicate for seamless loop */}
-              <div className="flex items-center gap-3 font-medium text-[11px] tracking-widest uppercase">
-                <span className="text-on-surface-variant">BTC/USD</span>
-                <span className="text-primary font-semibold">
-                  {btcPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
-          </div>
 
           <main className="relative pt-36 pb-6 h-[calc(100vh-120px)] flex flex-col justify-between items-center px-4 md:px-8 flex-grow w-full max-w-5xl mx-auto z-10 overflow-hidden">
             
@@ -1050,47 +541,7 @@ function App() {
               </div>
             </div>
 
-            {/* Quick Preview Market Pick Grid */}
-            <div className="w-full max-w-3xl z-20 mt-2 mb-2">
-              <p className="text-[9px] font-bold tracking-[0.3em] text-primary uppercase text-center mb-4 font-mono">AI-VERIFIED HOT PREVIEWS</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2">
-                <div 
-                  className="sahara-card p-4 rounded-xl cursor-pointer hover:border-primary transition-all flex flex-col justify-between"
-                  onClick={() => activateTerminalTrade('Will ETH hit $4k before October 30th?', 0.72, 0.28, '72.0', '$2.1M', '$310K', '+0.15%')}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[8px] font-bold tracking-[0.2em] text-primary uppercase border border-primary/20 px-2 py-0.5 rounded font-mono">AI VERIFIED</span>
-                    <span className="material-symbols-outlined text-primary/40 text-xs">account_balance</span>
-                  </div>
-                  <p className="serif-heading text-sm text-on-surface leading-tight mb-2 italic">Will ETH hit $4k before October 30th?</p>
-                  <div className="w-full bg-primary-container h-1 rounded-full mb-1">
-                    <div className="bg-primary h-full w-[72%]"></div>
-                  </div>
-                  <div className="flex justify-between text-[9px] font-bold tracking-widest uppercase">
-                    <span className="text-primary font-mono">YES 72%</span>
-                    <span className="text-on-surface-variant/40 font-mono">NO 28%</span>
-                  </div>
-                </div>
-
-                <div 
-                  className="sahara-card p-4 rounded-xl cursor-pointer hover:border-primary transition-all flex flex-col justify-between"
-                  onClick={() => activateTerminalTrade('Nvidia Q3 Revenue: Above $33B?', 0.45, 0.55, '45.0', '$4.8M', '$890K', '-0.04%')}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[8px] font-bold tracking-[0.2em] text-on-surface-variant/80 uppercase border border-outline px-2 py-0.5 rounded font-mono">MARKET PREVIEW</span>
-                    <span className="material-symbols-outlined text-primary/40 text-xs">trending_up</span>
-                  </div>
-                  <p className="serif-heading text-sm text-on-surface leading-tight mb-2">Nvidia Q3 Revenue: Above $33B?</p>
-                  <div className="w-full bg-primary-container h-1 rounded-full mb-1">
-                    <div className="bg-primary h-full w-[45%]"></div>
-                  </div>
-                  <div className="flex justify-between text-[9px] font-bold tracking-widest uppercase">
-                    <span className="text-primary font-mono">YES 45%</span>
-                    <span className="text-on-surface-variant/40 font-mono">NO 55%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Removed Quick Preview Market Pick Grid to enforce live-only data */}
 
           </main>
         </>
@@ -1417,7 +868,7 @@ function App() {
                               className="group px-6 py-3.5 bg-primary text-white font-mono text-[9px] tracking-[0.2em] rounded-lg transition-all hover:bg-on-surface hover:shadow-lg active:scale-95 uppercase font-bold flex items-center gap-2"
                               onClick={() => handleLaunchOnChain(msg)}
                             >
-                              <span>Launch On-chain</span>
+                              <span>Create Market</span>
                               <span className="material-symbols-outlined text-xs">rocket_launch</span>
                             </button>
                           </div>
@@ -1528,6 +979,14 @@ function App() {
       {currentView === 'terminal' && (
         <main className="pt-24 pb-4 px-4 w-full h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-[1600px] mx-auto flex-grow z-10 overflow-hidden">
           
+          {!activeMarket.realId ? (
+            <div className="col-span-12 flex flex-col items-center justify-center h-full w-full bg-surface rounded-xl border border-outline/20">
+              <span className="material-symbols-outlined text-4xl text-on-surface-variant mb-4">candlestick_chart</span>
+              <p className="text-on-surface font-mono tracking-widest text-sm">SELECT A MARKET FROM THE FEED TO TRADE</p>
+              <button onClick={() => setCurrentView('feed')} className="mt-6 px-6 py-2 bg-primary text-white text-xs font-bold uppercase rounded hover:bg-primary/90 transition-all">Go To Feed</button>
+            </div>
+          ) : (
+            <>
           {/* Left Column: Asset Header, Chart & Order Book Dynamics */}
           <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-4 h-full overflow-hidden">
             
@@ -1538,11 +997,11 @@ function App() {
                   <span className="material-symbols-outlined text-primary text-xl">auto_awesome</span>
                 </div>
                 <div>
-                  <h1 className="font-bold text-sm sm:text-base text-on-surface tracking-tight mb-0.5">{activeMarket.title}</h1>
+                  <h1 className="font-bold text-sm sm:text-base text-on-surface tracking-tight mb-0.5">{activeMarket.title || "Select a Market from the Feed"}</h1>
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                     <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">
-                      MARKET CLOSES IN: {formatTime(countdown.hours)}H {formatTime(countdown.minutes)}M {formatTime(countdown.seconds)}S
+                      MARKET EXPIRY PENDING RESOLUTION
                     </p>
                   </div>
                 </div>
@@ -1626,17 +1085,60 @@ function App() {
                        onClick={async () => {
                          if(contract && activeMarket.realId) {
                            try {
-                             const tx = await contract.redeemWinnings(activeMarket.realId);
-                             alert(`Redemption submitted! Hash: ${tx.hash}`);
+                             const tx = await contract.claimWinnings(activeMarket.realId);
+                             alert(`Claim submitted! Hash: ${tx.hash}`);
                              await tx.wait();
-                             alert('Redemption confirmed on Mantle network!');
+                             alert('Claim confirmed on Mantle network!');
                            } catch(e) {
                              alert(e.message);
                            }
                          }
                        }}
-                     >Redeem Winnings</button>
+                     >Claim Winnings</button>
                    ) : null}
+
+                   {/* Admin Oracle Resolution Controls */}
+                   <div className="mt-6 pt-6 border-t border-outline-variant/30 w-full flex flex-col items-center">
+                     <p className="text-[10px] text-on-surface-variant font-bold mb-3 uppercase tracking-widest">Admin Oracle Resolution</p>
+                     <div className="flex gap-4">
+                       <button className="px-4 py-2 bg-surface border border-bullish-green text-bullish-green hover:bg-bullish-green hover:text-white transition-all text-[9px] font-bold uppercase rounded tracking-widest"
+                         onClick={async () => {
+                           if(activeMarket.realId) {
+                             try {
+                               const res = await fetch('http://localhost:3001/resolve-market', {
+                                 method: 'POST',
+                                 headers: { 'Content-Type': 'application/json' },
+                                 body: JSON.stringify({ marketId: activeMarket.realId, outcome: true })
+                               });
+                               const data = await res.json();
+                               if(data.success) alert(`Market resolved as YES on Mantle! Hash: ${data.txHash}`);
+                               else alert(`Failed: ${data.error}`);
+                             } catch(e) {
+                               alert(e.message);
+                             }
+                           }
+                         }}
+                       >Resolve YES</button>
+                       <button className="px-4 py-2 bg-surface border border-bearish text-bearish hover:bg-bearish hover:text-white transition-all text-[9px] font-bold uppercase rounded tracking-widest"
+                         onClick={async () => {
+                           if(activeMarket.realId) {
+                             try {
+                               const res = await fetch('http://localhost:3001/resolve-market', {
+                                 method: 'POST',
+                                 headers: { 'Content-Type': 'application/json' },
+                                 body: JSON.stringify({ marketId: activeMarket.realId, outcome: false })
+                               });
+                               const data = await res.json();
+                               if(data.success) alert(`Market resolved as NO on Mantle! Hash: ${data.txHash}`);
+                               else alert(`Failed: ${data.error}`);
+                             } catch(e) {
+                               alert(e.message);
+                             }
+                           }
+                         }}
+                       >Resolve NO</button>
+                     </div>
+                   </div>
                 </div>
               ) : (
                 <div className="relative w-full flex-grow flex items-end min-h-0">
@@ -1700,27 +1202,11 @@ function App() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant/50">
-                    {[
-                      { price: (activeMarket.yesPrice * 1.002).toFixed(3), size: '12,400', total: (12400 * activeMarket.yesPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }), time: '12:44:02', source: 'AIRA_AG01', isBull: true },
-                      { price: (activeMarket.yesPrice * 1.001).toFixed(3), size: '8,150', total: (8150 * activeMarket.yesPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }), time: '12:44:01', source: 'MM_ALPHA', isBull: true },
-                      { price: activeMarket.yesPrice.toFixed(3), size: '22,000', total: (22000 * activeMarket.yesPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }), time: '12:43:58', source: 'LIQ_PROVIDER_X', isBull: false },
-                      { price: (activeMarket.yesPrice * 0.999).toFixed(3), size: '4,200', total: (4200 * activeMarket.yesPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }), time: '12:43:55', source: 'RETAIL_009', isBull: false }
-                    ].map((row, idx) => (
-                      <tr 
-                        key={idx} 
-                        className={`transition-colors group hover:bg-primary/5 ${pulsingRowIndex === idx ? 'bg-primary/10' : ''}`}
-                      >
-                        <td className={`px-4 py-2 font-bold ${row.isBull ? 'text-bullish-green' : 'text-bearish-red'}`}>
-                          {row.price}
-                        </td>
-                        <td className="px-4 py-2">{row.size}</td>
-                        <td className="px-4 py-2 text-on-surface-variant">${row.total}</td>
-                        <td className="px-4 py-2 text-on-surface-variant">{row.time}</td>
-                        <td className="px-4 py-2 text-right font-bold text-on-surface-variant group-hover:text-primary transition-colors">
-                          {row.source}
-                        </td>
-                      </tr>
-                    ))}
+                    <tr>
+                      <td colSpan="5" className="px-4 py-8 text-center text-on-surface-variant font-mono">
+                         WAITING FOR ON-CHAIN TRANSACTION LOGS...
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -1784,7 +1270,11 @@ function App() {
                      return;
                   }
                   try {
-                     const marketId = activeMarket.realId || 1; 
+                     if (!activeMarket.realId) {
+                         alert("Market ID missing. Ensure this market is verified on-chain.");
+                         return;
+                     }
+                     const marketId = activeMarket.realId;
                      const txValue = ethers.parseEther(tradeSize.toString());
                      let tx;
                      if (selectedDirection === 'YES') {
@@ -1853,6 +1343,8 @@ function App() {
               </form>
             </div>
           </div>
+          </>
+          )}
         </main>
       )}
 

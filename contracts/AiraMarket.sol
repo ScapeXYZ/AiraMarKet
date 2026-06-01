@@ -104,7 +104,7 @@ contract AiraMarketProtocol is Ownable {
         emit TradeRecorded(_marketId, msg.sender, "NO", msg.value);
     }
 
-    function redeemWinnings(uint256 _marketId) external {
+    function claimWinnings(uint256 _marketId) external {
         Market storage market = markets[_marketId];
         require(market.resolved, "Market not resolved");
         require(!hasClaimed[_marketId][msg.sender], "Already claimed");
