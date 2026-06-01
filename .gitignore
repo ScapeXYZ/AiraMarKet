@@ -45,6 +45,10 @@ dist/
 dist-ssr/
 *.local
 
+# Hardhat
+artifacts/
+cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

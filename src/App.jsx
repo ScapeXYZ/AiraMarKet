@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { ethers } from 'ethers';
 
 const trendingSuggestions = [
   {
@@ -85,7 +86,7 @@ const trendingSuggestions = [
   },
   {
     id: 'general_2',
-    category: 'GENERAL',
+    category: 'TECH',
     title: 'SpaceX Starship Booster Catch',
     prompt: 'Create a market for SpaceX catching the Starship booster on IFT-5',
     volume: '$18.4M',
@@ -97,6 +98,37 @@ const trendingSuggestions = [
 function App() {
   // Navigation View State: 'landing', 'feed', 'creator', or 'terminal'
   const [currentView, setCurrentView] = useState('landing'); 
+
+  // Web3 state
+  const [walletAddress, setWalletAddress] = useState('');
+  const [provider, setProvider] = useState(null);
+  const [contract, setContract] = useState(null);
+
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      try {
+        const browserProvider = new ethers.BrowserProvider(window.ethereum);
+        await browserProvider.send("eth_requestAccounts", []);
+        const signer = await browserProvider.getSigner();
+        const address = await signer.getAddress();
+        setWalletAddress(address);
+        setProvider(browserProvider);
+        
+        const contractAddress = import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+        const abi = [
+          "function buyYes(uint256 _marketId) external payable",
+          "function buyNo(uint256 _marketId) external payable",
+          "function redeemWinnings(uint256 _marketId) external"
+        ];
+        const marketContract = new ethers.Contract(contractAddress, abi, signer);
+        setContract(marketContract);
+      } catch (error) {
+        console.error("User rejected request", error);
+      }
+    } else {
+      alert("Please install MetaMask!");
+    }
+  };
 
   // Dark Mode Theme State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -130,7 +162,8 @@ function App() {
   // Dynamic terminal trading state
   const [tradeSize, setTradeSize] = useState(500);
   const [selectedDirection, setSelectedDirection] = useState('YES'); // 'YES' or 'NO'
-  const [activeTab, setActiveTab] = useState('PROBABILITY'); // 'PROBABILITY' or 'VOLUME'
+  const [activeTab, setActiveTab] = useState('PROBABILITY'); // 'PROBABILITY', 'VOLUME', 'POSITIONS'
+  const [userPositions, setUserPositions] = useState({ yes: "0", no: "0" });
   const [activeChartRange, setActiveChartRange] = useState('4H'); // '1H', '4H', '1D', '1W'
   const [pulsingRowIndex, setPulsingRowIndex] = useState(null);
   
@@ -142,12 +175,11 @@ function App() {
     { id: 'TECH', label: 'Tech Feed', icon: 'developer_board', color: 'text-bearish' },
     { id: 'CRYPTO', label: 'Crypto Feed', icon: 'currency_bitcoin', color: 'text-primary' },
     { id: 'SPORTS', label: 'Sports Feed', icon: 'sports_soccer', color: 'text-bullish-green' },
-    { id: 'FINANCE', label: 'Finance Feed', icon: 'payments', color: 'text-accent-gold' },
     { id: 'POLITICS', label: 'Politics Feed', icon: 'gavel', color: 'text-bullish' }
   ];
 
   // Prepopulated Cinematic scroll-snap Feed Cards across Tech, Crypto, Sports, Finance, Politics with dynamic statuses and circular passport thumbnails
-  const [feedCards] = useState([
+  const [feedCards, setFeedCards] = useState([
     // TECH
     {
       id: 1,
@@ -256,7 +288,7 @@ function App() {
       passport: "https://images.unsplash.com/photo-1622790698141-94e304bcbbad?auto=format&fit=crop&q=80&w=200",
       bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
       nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuAjJrYNIrwjx60oGN4JQ7V5opgwTqfSonzeEQy6cwpVdPFadQtUEwRJP5zWfTLfCBZiVeGfLw3Tu9gYLimllhOCetMUEqatBKxSRnO-8yuq3KEHeWag4ZgaxheS-sdbXSNZ3MGv4-Hd_uVHcACkuthADMQ8Z4S8ozwW6EqT7APT-pKxLTvdDx33p_Uk35_l2KUu6BXFevT6lLLKfbPwjWeB_Ck3YqlHBPKcY14k8n-PXbUbJkCgDbGA4Nms9qjFMxZoyoDHxOir0PY",
-      nodeName: "L1 Network Agent"
+      nodeName: "Mantle Agent"
     },
     // SPORTS
     {
@@ -313,7 +345,7 @@ function App() {
       nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
       nodeName: "Telemetry Node"
     },
-    // FINANCE
+    // FINANCE -> REALLOCATED
     {
       id: 7,
       title: "Will the Fed cut interest rates by 50bps or more in September?",
@@ -325,7 +357,7 @@ function App() {
       confidence: "92.0",
       openInterest: "$920K",
       drift: "+1.05%",
-      category: "FINANCE",
+      category: "POLITICS",
       status: "ACTIVE",
       passport: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=200",
       bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
@@ -343,7 +375,7 @@ function App() {
       confidence: "88.0",
       openInterest: "$610K",
       drift: "-0.40%",
-      category: "FINANCE",
+      category: "CRYPTO",
       status: "COMING",
       passport: "https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=200",
       bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
@@ -361,7 +393,7 @@ function App() {
       confidence: "91.0",
       openInterest: "$1.2M",
       drift: "+1.05%",
-      category: "FINANCE",
+      category: "TECH",
       status: "ENDED",
       passport: "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?auto=format&fit=crop&q=80&w=200",
       bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAcT_kSnFmBy7rHqesDLqrixx1hOGYqcvMwwOId6OgOc60ysEwxZ4U16EcoaPc7yJMMpqTTJuFBhItWxNl119EBYs7ShFiC1AG1Ry9ZDo1kl1PS6gE90li79AoeIfRbRBetegr0ePWcWmsGECO6_WCXctsFzyKmXfgwScSambFhHQpTuskTQrGojmsyKFson3ZKvF6GJD14jsSZv_shcHKb-wX-QarK5RN1z1B_aYrTyPrcs4UV3UHR1tEVrde398aZAobyC5C6HW4",
@@ -420,10 +452,58 @@ function App() {
       status: "ENDED",
       passport: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=200",
       bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
-      nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
       nodeName: "Westminster Node"
     }
   ]);
+
+  // Hook to fetch live markets
+  useEffect(() => {
+    const fetchLiveMarkets = async () => {
+      if (!contract) return;
+      try {
+        const liveMarkets = await contract.listMarkets();
+        // Map the blockchain markets into our UI feedCards
+        const mappedMarkets = liveMarkets.map((m) => {
+          const id = Number(m.id);
+          const totalYes = Number(ethers.formatEther(m.totalYesPool));
+          const totalNo = Number(ethers.formatEther(m.totalNoPool));
+          const total = totalYes + totalNo;
+          const yesProb = total > 0 ? Math.round((totalYes / total) * 100) : 50;
+          const noProb = total > 0 ? Math.round((totalNo / total) * 100) : 50;
+          
+          return {
+            id: `onchain_${id}`,
+            realId: id, // store raw smart contract id
+            title: m.title,
+            category: m.category.toUpperCase(),
+            volume: `$${total.toFixed(2)} MNT`,
+            yesProb,
+            noProb,
+            yesPrice: yesProb / 100,
+            noPrice: noProb / 100,
+            confidence: "Live",
+            openInterest: `${total.toFixed(2)} MNT`,
+            drift: "LIVE",
+            status: m.resolved ? "ENDED" : "ACTIVE",
+            passport: "https://images.unsplash.com/photo-1639762681485-074b7f4ec651?auto=format&fit=crop&q=80&w=200",
+            bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
+            nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
+            nodeName: "Mantle Oracle"
+          };
+        });
+        
+        // Prepend the live markets directly to the hardcoded ones
+        setFeedCards(prev => [...mappedMarkets.reverse(), ...prev.filter(p => !p.id.toString().startsWith('onchain'))]);
+      } catch (err) {
+        console.error("Failed to fetch live markets:", err);
+      }
+    };
+    fetchLiveMarkets();
+    
+    // Optional polling for live updates
+    const interval = setInterval(fetchLiveMarkets, 10000);
+    return () => clearInterval(interval);
+  }, [contract]);
 
   // Chat Feed messages state
   const [chatText, setChatText] = useState('');
@@ -484,8 +564,9 @@ function App() {
   };
 
   // Quick trade activation helper from Feed/Landing/Creator
-  const activateTerminalTrade = (marketTitle, yesPrice, noPrice, confidence, vol, openInterest, drift) => {
+  const activateTerminalTrade = (marketTitle, yesPrice, noPrice, confidence, vol, openInterest, drift, realId = 1) => {
     setActiveMarket({
+      realId: realId,
       title: marketTitle,
       confidence: confidence || '92.4',
       impliedPrice: yesPrice,
@@ -538,7 +619,7 @@ function App() {
     setTimeout(() => {
       // Dynamic Neural Market structures
       let proposedTitle = `Will ${userMessage.content.replace(/create a market for/gi, '').trim()} occur successfully before 2026?`;
-      let proposedCategory = 'GENERAL';
+      let proposedCategory = 'TECH';
       let proposedExpiry = 'Q4 2025';
       let proposedResolves = 'ORACLE';
       let yesProb = 50;
@@ -546,13 +627,13 @@ function App() {
 
       if (inputLower.includes('btc') || inputLower.includes('bitcoin')) {
         proposedTitle = 'Will Bitcoin surpass $100,000 by December 31st, 2024?';
-        proposedCategory = 'FINANCE';
+        proposedCategory = 'CRYPTO';
         proposedExpiry = 'Q4 2024';
         yesProb = 74;
         noProb = 26;
       } else if (inputLower.includes('solana') || inputLower.includes('sol')) {
         proposedTitle = 'Will Solana active addresses exceed 5 million in Q3?';
-        proposedCategory = 'DEFI';
+        proposedCategory = 'CRYPTO';
         proposedExpiry = 'Q3 2024';
         yesProb = 62;
         noProb = 38;
@@ -607,7 +688,7 @@ function App() {
     setTimeout(() => {
       // Dynamic Neural Market structures
       let proposedTitle = `Will ${promptText.replace(/create a market for/gi, '').trim()} occur successfully before 2026?`;
-      let proposedCategory = 'GENERAL';
+      let proposedCategory = 'TECH';
       let proposedExpiry = 'Q4 2025';
       let proposedResolves = 'ORACLE';
       let yesProb = 50;
@@ -615,13 +696,13 @@ function App() {
 
       if (inputLower.includes('btc') || inputLower.includes('bitcoin')) {
         proposedTitle = 'Will Bitcoin surpass $100,000 by December 31st, 2024?';
-        proposedCategory = 'FINANCE';
+        proposedCategory = 'CRYPTO';
         proposedExpiry = 'Q4 2024';
         yesProb = 74;
         noProb = 26;
       } else if (inputLower.includes('solana') || inputLower.includes('sol')) {
         proposedTitle = 'Will Solana active addresses exceed 5 million in Q3?';
-        proposedCategory = 'DEFI';
+        proposedCategory = 'CRYPTO';
         proposedExpiry = 'Q3 2024';
         yesProb = 62;
         noProb = 38;
@@ -657,28 +738,53 @@ function App() {
     }, 1200);
   };
 
-  // Launch on-chain simulated status sequencer
-  const handleLaunchOnChain = (market) => {
+  // Launch on-chain via Connected Wallet
+  const handleLaunchOnChain = async (market) => {
+    if (!contract) {
+      alert("Please connect your wallet first to deploy this market on-chain!");
+      return;
+    }
+    
     launchingMarketSet(market);
 
-    setTimeout(() => {
-      // Transition back to Terminal with the newly spawned structured AI market!
-      const yesPriceVal = +(market.yesProb / 100).toFixed(2);
-      const noPriceVal = +(market.noProb / 100).toFixed(2);
-
-      activateTerminalTrade(
+    try {
+      // 7 Days from now in seconds
+      const expirySeconds = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+      
+      // Execute transaction requiring User Signature
+      const tx = await contract.createMarket(
         market.title,
-        yesPriceVal,
-        noPriceVal,
-        String(market.yesProb),
-        '$250K',
-        '$15K',
-        '+0.00%'
+        market.category,
+        expirySeconds
       );
       
+      alert(`Transaction submitted! Waiting for Mantle network confirmation...\nTx Hash: ${tx.hash}`);
+      await tx.wait();
+      
+      // Store verifiable transparency log tied to transaction hash
+      await fetch('http://localhost:3001/log-transparency', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            txHash: tx.hash,
+            title: market.title,
+            category: market.category,
+            reason: "AI generated from live web signals across ESPN/CoinGecko/HackerNews",
+            confidence: market.likelihood || "80%",
+            decision: "User physically signed and approved via MetaMask"
+        })
+      });
+
+      alert(`🎉 SECURE ON-CHAIN LAUNCH COMPLETE! \n"${market.title}" has been deployed directly onto the Mantle ledger by your wallet! Log verifiably securely.`);
+      
+      // Switch back to feed where the live market will automatically show up due to polling
+      setCurrentView('feed');
+    } catch (err) {
+      console.error(err);
+      alert("Market creation failed or was rejected by user: " + err.message);
+    } finally {
       launchingMarketSet(null);
-      alert(`🎉 SECURE ON-CHAIN LAUNCH COMPLETE! \n"${market.title}" has been deployed directly onto the L1 ledger! Initialized liquidity pools.`);
-    }, 2000);
+    }
   };
 
   // Fluctuating ticker values & ticking clocks
@@ -790,7 +896,7 @@ function App() {
             <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
               <div className="h-full bg-primary animate-marquee w-[60%]"></div>
             </div>
-            <p className="text-[10px] font-mono text-on-surface-variant/60 uppercase">Securing transactions on L1 Devnet...</p>
+            <p className="text-[10px] font-mono text-on-surface-variant/60 uppercase">Securing transactions on Mantle Network...</p>
           </div>
         </div>
       )}
@@ -842,7 +948,12 @@ function App() {
           </div>
           <div className="flex gap-4">
             <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all">sensors</button>
-            <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all">account_balance_wallet</button>
+            <button 
+              className={`font-bold text-xs px-3 py-1.5 rounded transition-all ${walletAddress ? 'bg-surface-variant text-primary border border-primary/30' : 'bg-primary text-white hover:bg-primary/90'}`}
+              onClick={connectWallet}
+            >
+              {walletAddress ? `${walletAddress.substring(0, 6)}...` : 'Connect Wallet'}
+            </button>
             
             {/* Day / Night Mode theme switcher */}
             <button 
@@ -1128,7 +1239,7 @@ function App() {
                               <button 
                                 disabled={card.status !== 'ACTIVE'}
                                 className={`py-2 rounded border transition-all flex flex-col items-center justify-center ${card.status === 'ACTIVE' ? 'border-outline bg-surface hover:border-primary cursor-pointer' : 'border-outline/25 bg-surface-variant/10 opacity-55 cursor-not-allowed'}`}
-                                onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift)}
+                                onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift, card.realId)}
                               >
                                 <span className="text-[7px] font-bold text-on-surface-variant mb-0.5">YES</span>
                                 <span className="font-extrabold text-bullish text-base leading-none">{card.yesProb}%</span>
@@ -1136,7 +1247,7 @@ function App() {
                               <button 
                                 disabled={card.status !== 'ACTIVE'}
                                 className={`py-2 rounded border transition-all flex flex-col items-center justify-center ${card.status === 'ACTIVE' ? 'border-outline bg-surface hover:border-primary cursor-pointer' : 'border-outline/25 bg-surface-variant/10 opacity-55 cursor-not-allowed'}`}
-                                onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift)}
+                                onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift, card.realId)}
                               >
                                 <span className="text-[7px] font-bold text-on-surface-variant mb-0.5">NO</span>
                                 <span className="font-extrabold text-bearish text-base leading-none">{card.noProb}%</span>
@@ -1155,7 +1266,7 @@ function App() {
                             {card.status === 'ACTIVE' && (
                               <button 
                                 className="w-full bg-primary text-white py-3 rounded font-display font-bold text-[9px] tracking-[0.2em] uppercase hover:brightness-105 active:scale-[0.99] transition-all shrink-0"
-                                onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift)}
+                                onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift, card.realId)}
                               >
                                 PLACE PREDICTION
                               </button>
@@ -1201,7 +1312,7 @@ function App() {
                 Intelligent Markets, <br/><span className="text-primary italic">Deployed Instantly.</span>
               </h2>
               <p className="text-on-surface-variant text-xs leading-relaxed opacity-95">
-                Describe your market vision and let AIRA's intelligence structure, validate, and launch liquidity pools directly to the L1 Devnet ledger.
+                Describe your market vision and let AIRA's intelligence structure, validate, and launch liquidity pools directly to the Mantle Network ledger.
               </p>
             </div>
 
@@ -1337,7 +1448,7 @@ function App() {
                   <span className="font-mono text-on-surface text-[10px] tracking-widest uppercase font-extrabold">GLOBAL TRENDING TOPICS</span>
                 </div>
                 <div className="flex items-center gap-1 bg-surface-variant/60 border border-outline-variant/60 rounded-full p-0.5 font-mono text-[9px] w-fit overflow-x-auto">
-                  {['ALL', 'TECH', 'CRYPTO', 'POLITICS', 'GENERAL'].map((tab) => (
+                  {['ALL', 'TECH', 'CRYPTO', 'POLITICS', 'SPORTS'].map((tab) => (
                     <button
                       key={tab}
                       type="button"
@@ -1353,7 +1464,7 @@ function App() {
               {/* Horizontal Scroll Grid of Suggestion Cards */}
               <div className="flex gap-3 overflow-x-auto pb-3 pt-1 scrollbar-thin max-w-full">
                 {trendingSuggestions
-                  .filter(item => selectedSuggestionTab === 'ALL' || item.category === selectedSuggestionTab || (selectedSuggestionTab === 'GENERAL' && (item.category === 'GENERAL' || item.category === 'SPORTS')))
+                  .filter(item => selectedSuggestionTab === 'ALL' || item.category === selectedSuggestionTab)
                   .map((item) => (
                     <button
                       key={item.id}
@@ -1469,6 +1580,19 @@ function App() {
                   >
                     VOLUME
                   </button>
+                  <button 
+                    className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${activeTab === 'POSITIONS' ? 'bg-surface text-primary shadow-xs' : 'bg-transparent text-on-surface-variant hover:text-on-surface'}`}
+                    onClick={async () => {
+                      setActiveTab('POSITIONS');
+                      if (contract && walletAddress && activeMarket.realId) {
+                         const y = await contract.yesShares(activeMarket.realId, walletAddress);
+                         const n = await contract.noShares(activeMarket.realId, walletAddress);
+                         setUserPositions({ yes: ethers.formatEther(y), no: ethers.formatEther(n) });
+                      }
+                    }}
+                  >
+                    POSITIONS
+                  </button>
                 </div>
                 <div className="flex items-center gap-3 font-bold text-[10px] text-on-surface-variant">
                   {['1H', '4H', '1D', '1W'].map(range => (
@@ -1484,26 +1608,58 @@ function App() {
               </div>
               
               {/* Graphic Plot Area */}
-              <div className="relative w-full flex-grow flex items-end min-h-0">
-                <svg className="w-full h-full overflow-visible max-h-[160px] md:max-h-[200px]" viewBox="0 0 1000 300" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="chartGradientSahara" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#c2652a" stopOpacity="0.15"></stop>
-                      <stop offset="100%" stopColor="#c2652a" stopOpacity="0"></stop>
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,250 Q100,240 200,200 T400,180 T600,120 T800,80 T1000,40 L1000,300 L0,300 Z" fill="url(#chartGradientSahara)"></path>
-                  <path d="M0,250 Q100,240 200,200 T400,180 T600,120 T800,80 T1000,40" fill="none" stroke="#c2652a" strokeLinecap="round" strokeWidth="2.5"></path>
-                  <circle cx="800" cy="80" fill="#c2652a" r="5">
-                    <animate attributeName="r" dur="3s" repeatCount="indefinite" values="5;7;5"></animate>
-                  </circle>
-                </svg>
-                <div className="absolute inset-0 flex flex-col justify-between py-2 pointer-events-none">
-                  <div className="border-t border-outline-variant/40 w-full"></div>
-                  <div className="border-t border-outline-variant/40 w-full"></div>
-                  <div className="border-t border-outline-variant/40 w-full"></div>
+              {activeTab === 'POSITIONS' ? (
+                <div className="relative w-full flex-grow flex flex-col justify-center items-center text-center min-h-0 bg-surface-variant/20 rounded-xl p-4 border border-outline-variant/30">
+                   <h3 className="text-sm font-bold text-on-surface mb-4 font-display tracking-widest uppercase">My On-Chain Positions</h3>
+                   <div className="flex gap-8 w-full justify-center">
+                     <div className="p-4 bg-surface rounded-lg border border-bullish-green/30 w-32 shadow-sm">
+                        <p className="text-[10px] text-on-surface-variant font-bold mb-1">YES SHARES</p>
+                        <p className="text-xl font-mono text-bullish-green font-extrabold">{userPositions.yes}</p>
+                     </div>
+                     <div className="p-4 bg-surface rounded-lg border border-bearish/30 w-32 shadow-sm">
+                        <p className="text-[10px] text-on-surface-variant font-bold mb-1">NO SHARES</p>
+                        <p className="text-xl font-mono text-bearish font-extrabold">{userPositions.no}</p>
+                     </div>
+                   </div>
+                   {Number(userPositions.yes) > 0 || Number(userPositions.no) > 0 ? (
+                     <button className="mt-6 px-6 py-2 border border-primary text-primary hover:bg-primary hover:text-white transition-all text-xs font-bold uppercase rounded-md tracking-widest"
+                       onClick={async () => {
+                         if(contract && activeMarket.realId) {
+                           try {
+                             const tx = await contract.redeemWinnings(activeMarket.realId);
+                             alert(`Redemption submitted! Hash: ${tx.hash}`);
+                             await tx.wait();
+                             alert('Redemption confirmed on Mantle network!');
+                           } catch(e) {
+                             alert(e.message);
+                           }
+                         }
+                       }}
+                     >Redeem Winnings</button>
+                   ) : null}
                 </div>
-              </div>
+              ) : (
+                <div className="relative w-full flex-grow flex items-end min-h-0">
+                  <svg className="w-full h-full overflow-visible max-h-[160px] md:max-h-[200px]" viewBox="0 0 1000 300" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="chartGradientSahara" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#c2652a" stopOpacity="0.15"></stop>
+                        <stop offset="100%" stopColor="#c2652a" stopOpacity="0"></stop>
+                      </linearGradient>
+                    </defs>
+                    <path d="M0,250 Q100,240 200,200 T400,180 T600,120 T800,80 T1000,40 L1000,300 L0,300 Z" fill="url(#chartGradientSahara)"></path>
+                    <path d="M0,250 Q100,240 200,200 T400,180 T600,120 T800,80 T1000,40" fill="none" stroke="#c2652a" strokeLinecap="round" strokeWidth="2.5"></path>
+                    <circle cx="800" cy="80" fill="#c2652a" r="5">
+                      <animate attributeName="r" dur="3s" repeatCount="indefinite" values="5;7;5"></animate>
+                    </circle>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col justify-between py-2 pointer-events-none">
+                    <div className="border-t border-outline-variant/40 w-full"></div>
+                    <div className="border-t border-outline-variant/40 w-full"></div>
+                    <div className="border-t border-outline-variant/40 w-full"></div>
+                  </div>
+                </div>
+              )}
 
               {/* Ticking Tickers Row */}
               <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
@@ -1622,7 +1778,28 @@ function App() {
               </div>
               <button 
                 className="w-full py-3 bg-primary text-white font-bold text-[10px] rounded hover:bg-primary/90 transition-all active:scale-[0.97] uppercase tracking-widest"
-                onClick={() => alert(`Confirmed: Bought ${estShares} shares of ${selectedDirection} for $${tradeSize} USDC.`)}
+                onClick={async () => {
+                  if (!contract) {
+                     alert("Please connect your wallet first!");
+                     return;
+                  }
+                  try {
+                     const marketId = activeMarket.realId || 1; 
+                     const txValue = ethers.parseEther(tradeSize.toString());
+                     let tx;
+                     if (selectedDirection === 'YES') {
+                       tx = await contract.buyYes(marketId, { value: txValue });
+                     } else {
+                       tx = await contract.buyNo(marketId, { value: txValue });
+                     }
+                     alert(`Transaction submitted! Hash: ${tx.hash}`);
+                     await tx.wait();
+                     alert(`Confirmed: Bought shares of ${selectedDirection} for ${tradeSize} MNT on-chain!`);
+                  } catch (err) {
+                     console.error(err);
+                     alert("Transaction failed! " + err.message);
+                  }
+                }}
               >
                 CONFIRM POSITION
               </button>
