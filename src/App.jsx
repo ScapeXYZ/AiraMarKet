@@ -103,6 +103,14 @@ function App() {
   const [walletAddress, setWalletAddress] = useState('');
   const [provider, setProvider] = useState(null);
   const [contract, setContract] = useState(null);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+
+  const disconnectWallet = () => {
+    setWalletAddress('');
+    setProvider(null);
+    setContract(null);
+    setShowWalletModal(false);
+  };
 
   const connectWallet = async () => {
     if (window.ethereum) {
@@ -126,8 +134,10 @@ function App() {
         ];
         const marketContract = new ethers.Contract(contractAddress, abi, signer);
         setContract(marketContract);
+        setShowWalletModal(false);
       } catch (error) {
         console.error("User rejected request", error);
+        setShowWalletModal(false);
       }
     } else {
       alert("Please install MetaMask!");
@@ -471,30 +481,54 @@ function App() {
               type="text"
             />
           </div>
-          <div className="flex gap-4">
-            <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all">sensors</button>
-            <button 
-              className={`font-bold text-xs px-3 py-1.5 rounded transition-all ${walletAddress ? 'bg-surface-variant text-primary border border-primary/30' : 'bg-primary text-white hover:bg-primary/90'}`}
-              onClick={connectWallet}
-            >
-              {walletAddress ? `${walletAddress.substring(0, 6)}...` : 'Connect Wallet'}
-            </button>
+          <div className="flex items-center gap-4 relative">
+            <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all flex items-center justify-center">sensors</button>
+            
+            <div className="relative flex items-center">
+              <button 
+                className={`font-bold text-xs px-3 py-1.5 rounded transition-all ${walletAddress ? 'bg-surface-variant text-primary border border-primary/30' : 'bg-primary text-white hover:bg-primary/90'}`}
+                onClick={() => setShowWalletModal(!showWalletModal)}
+              >
+                {walletAddress ? `${walletAddress.substring(0, 6)}...` : 'Connect Wallet'}
+              </button>
+              
+              {showWalletModal && (
+                <div className="absolute top-full mt-2 right-0 w-48 bg-surface border border-outline-variant rounded-xl shadow-xl p-2 z-50 flex flex-col gap-1">
+                  {!walletAddress ? (
+                    <>
+                      <button className="w-full text-left px-3 py-2 text-xs font-bold text-on-surface hover:bg-surface-variant rounded flex items-center gap-2" onClick={connectWallet}>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-4 h-4 object-contain" />
+                        MetaMask
+                      </button>
+                      <button className="w-full text-left px-3 py-2 text-xs font-bold text-on-surface hover:bg-surface-variant rounded flex items-center gap-2" onClick={connectWallet}>
+                        <span className="material-symbols-outlined text-base text-blue-500">link</span>
+                        WalletConnect
+                      </button>
+                    </>
+                  ) : (
+                    <button className="w-full text-left px-3 py-2 text-xs font-bold text-bearish hover:bg-bearish/10 rounded flex items-center gap-2" onClick={disconnectWallet}>
+                      <span className="material-symbols-outlined text-base">logout</span>
+                      Disconnect
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
             
             {/* Day / Night Mode theme switcher */}
             <button 
-              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all p-2 rounded-full hover:bg-surface-variant/40"
+              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all p-2 rounded-full hover:bg-surface-variant/40 flex items-center justify-center"
               onClick={toggleTheme}
               title={isDarkMode ? "Switch to Day Mode" : "Switch to Night Mode"}
             >
               {isDarkMode ? 'light_mode' : 'dark_mode'}
             </button>
 
-            <div className="relative">
-              <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all">notifications</button>
+            <div className="relative flex items-center justify-center">
+              <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all flex items-center justify-center">notifications</button>
               <span className="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full ring-2 ring-surface"></span>
             </div>
-          </div>
-          <div className="h-10 w-10 rounded-full border-2 border-outline-variant p-0.5">
+          <div className="h-10 w-10 rounded-full border-2 border-outline-variant p-0.5" onClick={() => setCurrentView('portfolio')} title="View Portfolio">
             <img 
               alt="User avatar" 
               className="w-full h-full rounded-full object-cover grayscale hover:grayscale-0 transition-all cursor-pointer" 
@@ -508,7 +542,7 @@ function App() {
       {currentView === 'landing' && (
         <>
 
-          <main className="relative pt-36 pb-6 h-[calc(100vh-120px)] flex flex-col justify-between items-center px-4 md:px-8 flex-grow w-full max-w-5xl mx-auto z-10 overflow-hidden">
+          <main className="relative pt-36 pb-6 min-h-[calc(100vh-120px)] flex flex-col justify-between items-center px-4 md:px-8 flex-grow w-full max-w-5xl mx-auto z-10">
             
             {/* Hero Top Content Block */}
             <div className="w-full text-center flex flex-col items-center flex-grow justify-center max-w-3xl">
@@ -549,7 +583,7 @@ function App() {
 
       {/* VIEW 2: CORE SNAP FEED (Multi-column snap dashboard feed wall!) */}
       {currentView === 'feed' && (
-        <div className="pt-20 flex flex-col w-full h-[calc(100vh-80px)] overflow-hidden bg-background relative z-10">
+        <div className="pt-20 flex flex-col w-full min-h-[calc(100vh-80px)] bg-background relative z-10">
           
           {/* Glassy, Floating Unified Status Selector & Category Anchor Bar */}
           <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[45] flex flex-col md:flex-row items-center gap-4 bg-surface/90 backdrop-blur-md border border-outline-variant rounded-2xl md:rounded-full p-2 shadow-lg w-auto max-w-[95%]">
@@ -597,7 +631,7 @@ function App() {
           </div>
 
           {/* Horizontally scrollable column wrapper */}
-          <main className="pt-16 pb-4 px-4 w-full h-full overflow-x-auto flex gap-6 z-10 scrollbar-thin">
+          <main className="pt-16 pb-4 px-4 w-full h-auto overflow-x-auto flex gap-6 z-10 scrollbar-thin">
             {feedCategories.map((col) => {
               // Filter cards belonging specifically to this feed AND the active status filter!
               const cardsInCol = feedCards.filter(card => card.category === col.id && card.status === activeFeedFilter);
@@ -606,7 +640,7 @@ function App() {
                 <div 
                   id={`col-${col.id.toLowerCase()}`}
                   key={col.id} 
-                  className="min-w-[320px] max-w-[340px] flex-shrink-0 flex flex-col h-full bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm animate-subtle-fade"
+                  className="min-w-[320px] max-w-[340px] flex-shrink-0 flex flex-col h-auto bg-surface border border-outline-variant rounded-xl shadow-sm animate-subtle-fade"
                 >
                   {/* Column Header */}
                   <div className="px-5 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-variant/20">
@@ -620,7 +654,7 @@ function App() {
                   </div>
                   
                   {/* Vertical scroll-snapping card deck in column */}
-                  <div className="flex-grow overflow-y-auto col-snap-container p-4 space-y-4">
+                  <div className="flex-grow col-snap-container p-4 space-y-4">
                     {cardsInCol.length > 0 ? (
                       cardsInCol.map((card) => (
                         <div 
@@ -749,10 +783,10 @@ function App() {
 
       {/* VIEW 3: AI MARKET CREATOR LAB */}
       {currentView === 'creator' && (
-        <main className="pt-24 pb-4 px-4 w-full h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-7xl mx-auto z-10 relative overflow-hidden flex-grow">
+        <main className="pt-24 pb-4 px-4 w-full min-h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-7xl mx-auto z-10 relative flex-grow">
           
           {/* Left Column: Premium Title Description & Ticking Sahara Stats */}
-          <div className="col-span-12 lg:col-span-4 flex flex-col justify-between h-full bg-surface-variant/20 border border-outline-variant rounded-xl p-5 overflow-y-auto">
+          <div className="col-span-12 lg:col-span-4 flex flex-col justify-between h-auto bg-surface-variant/20 border border-outline-variant rounded-xl p-5">
             {/* Title description block */}
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary-container text-primary font-mono text-[9px] tracking-widest uppercase font-bold animate-pulse">
@@ -800,9 +834,9 @@ function App() {
           </div>
 
           {/* Right Column: Dynamic internal scrolling Conversational AI parser panel */}
-          <div className="col-span-12 lg:col-span-8 bg-surface rounded-xl border border-outline-variant shadow-lg p-5 flex flex-col h-full overflow-hidden">
+          <div className="col-span-12 lg:col-span-8 bg-surface rounded-xl border border-outline-variant shadow-lg p-5 flex flex-col h-auto">
             {/* Chat Feed Messages Scroller */}
-            <div className="flex-grow overflow-y-auto pr-2 space-y-6 min-h-0 col-snap-container">
+            <div className="flex-grow pr-2 space-y-6 min-h-0 col-snap-container">
               {creatorMessages.map((msg) => (
                 <div key={msg.id} className="flex items-start gap-4 col-snap-section">
                   {msg.type === 'user' ? (
@@ -977,7 +1011,7 @@ function App() {
 
       {/* VIEW 4: TRADING TERMINAL */}
       {currentView === 'terminal' && (
-        <main className="pt-24 pb-4 px-4 w-full h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-[1600px] mx-auto flex-grow z-10 overflow-hidden">
+        <main className="pt-24 pb-4 px-4 w-full min-h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-[1600px] mx-auto flex-grow z-10">
           
           {!activeMarket.realId ? (
             <div className="col-span-12 flex flex-col items-center justify-center h-full w-full bg-surface rounded-xl border border-outline/20">
@@ -988,7 +1022,7 @@ function App() {
           ) : (
             <>
           {/* Left Column: Asset Header, Chart & Order Book Dynamics */}
-          <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-4 h-full overflow-hidden">
+          <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-4 h-auto">
             
             {/* Asset Header Info */}
             <div className="sahara-panel p-4 rounded-xl flex items-center justify-between gap-4 bg-surface shrink-0">
@@ -1024,7 +1058,7 @@ function App() {
             </div>
 
             {/* Dynamic Probability Chart Arena */}
-            <div className="sahara-panel rounded-xl p-4 relative overflow-hidden flex-grow flex flex-col min-h-0 bg-surface justify-between">
+            <div className="sahara-panel rounded-xl p-4 relative flex-grow flex flex-col min-h-[400px] bg-surface justify-between">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex gap-1.5 p-0.5 bg-surface-variant rounded-lg">
                   <button 
@@ -1214,7 +1248,7 @@ function App() {
           </div>
 
           {/* Right Column: Execution Form & Internal Scroll live sentiment chat logs */}
-          <div className="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
+          <div className="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col gap-4 h-auto">
             
             {/* Execute Buy Form Card */}
             <div className="sahara-panel rounded-xl p-5 border-t-2 border-t-primary bg-surface shrink-0">
@@ -1296,14 +1330,14 @@ function App() {
             </div>
 
             {/* Live Sentiment chat logs */}
-            <div className="sahara-panel rounded-xl flex-grow flex flex-col min-h-0 bg-surface overflow-hidden">
+            <div className="sahara-panel rounded-xl flex-grow flex flex-col min-h-[500px] bg-surface">
               <div className="px-4 py-3 border-b border-outline-variant flex items-center justify-between shrink-0">
                 <h3 className="font-bold text-[9px] text-on-surface tracking-widest uppercase">LIVE CHAT</h3>
                 <span className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest">2.4K WATCHING</span>
               </div>
               
               {/* Message scroll loop */}
-              <div className="flex-grow p-4 space-y-4 overflow-y-auto min-h-0 scrollbar-thin col-snap-container">
+              <div className="flex-grow p-4 space-y-4 min-h-0 col-snap-container">
                 {messages.map((msg, index) => (
                   <div key={msg.id} className={`flex gap-3 col-snap-section ${index >= 2 ? 'opacity-65' : ''}`}>
                     {msg.type === 'bot' ? (
@@ -1345,6 +1379,61 @@ function App() {
           </div>
           </>
           )}
+        </main>
+      )}
+
+      {/* VIEW 5: USER PORTFOLIO */}
+      {currentView === 'portfolio' && (
+        <main className="pt-24 pb-4 px-4 w-full min-h-[calc(100vh-100px)] flex flex-col items-center max-w-5xl mx-auto z-10 flex-grow">
+          <div className="w-full bg-surface rounded-xl border border-outline-variant shadow-lg p-6 lg:p-10 text-center flex flex-col items-center">
+            <div className="w-24 h-24 rounded-full border-4 border-primary/20 p-1 mb-6">
+               <img 
+                 alt="User avatar" 
+                 className="w-full h-full rounded-full object-cover" 
+                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA"
+               />
+            </div>
+            
+            <h2 className="serif-heading text-2xl mb-1 text-on-surface">Trader Profile</h2>
+            <p className="text-on-surface-variant font-mono text-xs tracking-widest uppercase mb-8">
+              {walletAddress ? `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}` : 'Not Connected'}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+              <div className="sahara-panel p-6 rounded-xl flex flex-col items-center justify-center bg-surface-variant/30">
+                <span className="material-symbols-outlined text-primary text-3xl mb-2">account_balance_wallet</span>
+                <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Balance</p>
+                <p className="text-xl font-bold font-mono text-on-surface">
+                  {walletAddress ? '0.00 MNT' : '---'}
+                </p>
+              </div>
+
+              <div className="sahara-panel p-6 rounded-xl flex flex-col items-center justify-center bg-surface-variant/30">
+                <span className="material-symbols-outlined text-bullish-green text-3xl mb-2">trending_up</span>
+                <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">Active Positions</p>
+                <p className="text-xl font-bold font-mono text-on-surface">
+                  {walletAddress ? '0' : '---'}
+                </p>
+              </div>
+
+              <div className="sahara-panel p-6 rounded-xl flex flex-col items-center justify-center bg-surface-variant/30">
+                <span className="material-symbols-outlined text-amber-500 text-3xl mb-2">emoji_events</span>
+                <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Winnings</p>
+                <p className="text-xl font-bold font-mono text-on-surface">
+                  {walletAddress ? '0.00 MNT' : '---'}
+                </p>
+              </div>
+            </div>
+
+            {!walletAddress && (
+              <button 
+                onClick={() => setShowWalletModal(true)} 
+                className="mt-8 px-8 py-3 bg-primary text-white rounded font-bold text-xs uppercase tracking-widest hover:bg-primary/90 transition-all"
+              >
+                Connect to view Portfolio
+              </button>
+            )}
+          </div>
         </main>
       )}
 
