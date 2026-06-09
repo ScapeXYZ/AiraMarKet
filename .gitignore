@@ -60,3 +60,16 @@ cache/
 *.sln
 *.sw?
 server/logs/
+
+# Test coverage
+coverage/
+coverage.json
+
+# Databases
+*.db
+*.db-journal
+
+# Secrets & Keys
+wallet.json
+.secret
+keys.json

@@ -15,8 +15,15 @@ export class SignalIngestionService {
     /**
      * Determines a rough signal strength (0-100) based on upvotes, rank, or pure randomness if missing
      */
-    private static calculateSignalStrength(metric: number | undefined): number {
-        if (!metric) return Math.floor(Math.random() * 40) + 50; // default 50-90
+    private static calculateSignalStrength(metric: number | undefined, topic: string = ""): number {
+        if (!metric) {
+            let hash = 0;
+            for (let i = 0; i < topic.length; i++) {
+                hash = topic.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const strength = 60 + (Math.abs(hash) % 36); // generates 60 to 95 deterministically
+            return strength;
+        }
         const strength = Math.min(100, Math.max(10, metric / 100));
         return Math.floor(strength);
     }
@@ -114,6 +121,12 @@ export class SignalIngestionService {
         }
     }
 
+    public static recentSignals: NormalizedSignal[] = [];
+
+    static getRecentSignals(): NormalizedSignal[] {
+        return this.recentSignals;
+    }
+
     static async runIngestionCycle() {
         console.log("[INGESTION] Starting REAL data ingestion cycle...");
         
@@ -125,6 +138,7 @@ export class SignalIngestionService {
         ]);
 
         const allSignals = [...crypto, ...tech, ...politics, ...sports];
+        this.recentSignals = allSignals;
         
         allSignals.forEach(signal => {
             console.log(`[INGESTION] Emitted real normalized signal for ${signal.category.toUpperCase()}: ${signal.topic.substring(0, 50)}...`);

@@ -24,7 +24,26 @@ export class MantleService {
         this.contractAddress = process.env.VITE_MANTLE_CONTRACT_ADDRESS || "";
         if (!this.contractAddress) {
             console.warn("[MANTLE_SERVICE] VITE_MANTLE_CONTRACT_ADDRESS is not set. Oracle resolution will fail.");
+        } else {
+            this.listenToEvents();
         }
+    }
+
+    listenToEvents() {
+        console.log(`[MANTLE_SERVICE] Connecting to smart contract events at ${this.contractAddress}`);
+        const abi = [
+            "event MarketCreated(uint256 indexed id, string title, string category, uint256 expiry, address creator)",
+            "event MarketResolved(uint256 indexed marketId, bool outcome, address resolver)"
+        ];
+        const marketContract = new ethers.Contract(this.contractAddress, abi, this.provider);
+        
+        marketContract.on("MarketCreated", (id, title, category, expiry, creator) => {
+            console.log(`\n[ON-CHAIN EVENT] 🔥 New Market Created: ${title} (ID: ${id}) by ${creator}`);
+        });
+
+        marketContract.on("MarketResolved", (marketId, outcome, resolver) => {
+            console.log(`\n[ON-CHAIN EVENT] 🏁 Market ${marketId} Resolved as ${outcome ? 'YES' : 'NO'} by ${resolver}`);
+        });
     }
 
     async resolveMarket(marketId: number, outcome: boolean) {

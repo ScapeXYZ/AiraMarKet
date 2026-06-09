@@ -1,4 +1,5 @@
 import { eventBus, SystemEvents } from '../core/event_bus';
+import { MarketCache } from './market_cache';
 
 /**
  * Orchestrates Market Lifecycle: ASSISTED ONLY
@@ -20,11 +21,8 @@ export class MarketService {
             status: 'PENDING_APPROVAL'
         });
 
-        // Store into global memory for frontend polling
-        if (!(global as any).pendingMarkets) {
-            (global as any).pendingMarkets = [];
-        }
-        (global as any).pendingMarkets.push(proposal);
+        // Store into persistent file database cache for frontend polling
+        MarketCache.addPendingMarket(proposal);
     }
 }
 

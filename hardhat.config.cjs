@@ -16,8 +16,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      mantleTestnet: "xyz",
-      mantleMainnet: "xyz"
+      mantleTestnet: process.env.MANTLE_EXPLORER_API_KEY || "",
+      mantleMainnet: process.env.MANTLE_EXPLORER_API_KEY || ""
     },
     customChains: [
       {

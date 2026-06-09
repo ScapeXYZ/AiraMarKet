@@ -31,12 +31,22 @@ contract AiraMarketProtocol is Ownable {
     // marketId => user => claimed
     mapping(uint256 => mapping(address => bool)) public hasClaimed;
 
+    // Decentralization and Timelock State
+    address public chainlinkOracle;
+    mapping(uint256 => uint256) public resolutionTimelock; // marketId => unlockTime
+    mapping(uint256 => bool) public pendingResolutionOutcome; // marketId => proposedOutcome
+    uint256 public constant TIMELOCK_DURATION = 1 days;
+
     event MarketCreated(uint256 indexed id, string title, string category, uint256 expiry, address creator);
     event TradeRecorded(uint256 indexed marketId, address indexed user, string position, uint256 amount);
     event MarketResolved(uint256 indexed marketId, bool outcome, address resolver);
     event WinningsRedeemed(uint256 indexed marketId, address indexed user, uint256 amount);
+    event ResolutionProposed(uint256 indexed marketId, bool outcome, uint256 unlockTime);
+    event OracleSet(address indexed oracle);
 
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable(msg.sender) {
+        chainlinkOracle = msg.sender;
+    }
 
     // ==========================================
     // MARKET FACTORY LOGIC
@@ -136,15 +146,42 @@ contract AiraMarketProtocol is Ownable {
     // RESOLUTION LOGIC
     // ==========================================
 
-    // Can be triggered by verified API source or Oracle (represented by onlyOwner)
-    function resolveMarket(uint256 _marketId, bool _outcome) external onlyOwner {
+    function setChainlinkOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0), "Invalid oracle address");
+        chainlinkOracle = _oracle;
+        emit OracleSet(_oracle);
+    }
+
+    // Can be resolved immediately by the Chainlink oracle, or by the owner with a timelock delay.
+    function resolveMarket(uint256 _marketId, bool _outcome) external {
         Market storage market = markets[_marketId];
         require(market.id != 0, "Market does not exist");
         require(!market.resolved, "Market already resolved");
 
-        market.resolved = true;
-        market.outcome = _outcome;
-
-        emit MarketResolved(_marketId, _outcome, msg.sender);
+        if (msg.sender == chainlinkOracle) {
+            // Chainlink Oracle can resolve immediately without timelock
+            market.resolved = true;
+            market.outcome = _outcome;
+            emit MarketResolved(_marketId, _outcome, msg.sender);
+        } else if (msg.sender == owner()) {
+            // Owner fallback is subject to a timelock to prioritize Chainlink outcomes
+            uint256 unlockTime = resolutionTimelock[_marketId];
+            if (unlockTime == 0) {
+                // First step: owner proposes the resolution and starts the timelock
+                resolutionTimelock[_marketId] = block.timestamp + TIMELOCK_DURATION;
+                pendingResolutionOutcome[_marketId] = _outcome;
+                emit ResolutionProposed(_marketId, _outcome, block.timestamp + TIMELOCK_DURATION);
+            } else {
+                // Second step: owner executes after the timelock has passed
+                require(block.timestamp >= unlockTime, "Resolution timelock has not expired");
+                require(_outcome == pendingResolutionOutcome[_marketId], "Outcome mismatch with proposed outcome");
+                
+                market.resolved = true;
+                market.outcome = _outcome;
+                emit MarketResolved(_marketId, _outcome, msg.sender);
+            }
+        } else {
+            revert("Not authorized to resolve market");
+        }
     }
 }

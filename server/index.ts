@@ -6,23 +6,42 @@ import { marketService } from './services/market_service';
 import { SignalIngestionService } from './services/signal_ingestion';
 import * as http from 'http';
 import { TransparencyLogger } from './services/transparency_logger';
-
-(global as any).pendingMarkets = [];
+import { MarketCache } from './services/market_cache';
+import { exec } from 'child_process';
 
 console.log("🚀 Starting AIRA Markets Autonomous Backend...");
 
-cryptoAgent;
-sportsAgent;
-politicsAgent;
-techAgent;
-marketService;
+async function runPrismaMigrations() {
+    if (process.env.USE_PRISMA === 'true') {
+        console.log("🔄 [DB] USE_PRISMA is enabled. Running database migrations/push...");
+        return new Promise<void>((resolve) => {
+            exec('npx prisma db push --accept-data-loss', (error, stdout, stderr) => {
+                if (error) {
+                    console.error("❌ [DB] Prisma db push failed:", error.message);
+                } else {
+                    console.log("✅ [DB] Prisma database schema synchronized successfully.");
+                }
+                resolve();
+            });
+        });
+    }
+}
 
-setTimeout(() => {
-    SignalIngestionService.runIngestionCycle();
-}, 2000);
+// Start sequence
+runPrismaMigrations().then(() => {
+    cryptoAgent;
+    sportsAgent;
+    politicsAgent;
+    techAgent;
+    marketService;
+
+    setTimeout(() => {
+        SignalIngestionService.runIngestionCycle();
+    }, 2000);
+});
 
 // HTTP Server to accept verifiable transparency logs from Frontend
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
@@ -86,8 +105,16 @@ const server = http.createServer((req, res) => {
 
     if (req.method === 'GET' && req.url === '/pending-markets') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(global.pendingMarkets || []));
-        global.pendingMarkets = []; // Clear after sending to avoid duplicates
+        const pending = await MarketCache.getPendingMarkets();
+        res.end(JSON.stringify(pending));
+        await MarketCache.clearPendingMarkets(); // Clear after sending to avoid duplicates
+        return;
+    }
+
+    if (req.method === 'GET' && req.url === '/live-trending') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        const signals = SignalIngestionService.getRecentSignals();
+        res.end(JSON.stringify(signals));
         return;
     }
 
