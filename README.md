@@ -1,4 +1,4 @@
-# AIRA Markets 🔮
+# AIRA Markets
 
 AIRA Markets is an autonomous, decentralized prediction market on the Mantle Network. Background AI agents constantly analyze real-world data to identify highly debated topics and propose them as structured YES/NO markets. When a user approves an AI suggestion, a smart contract is instantly deployed on Mantle, allowing users globally to trade YES or NO shares directly from their wallets. 
 
@@ -6,7 +6,7 @@ The system converts live data signals into structured on-chain markets. Users re
 
 ---
 
-## 🏆 Key Architecture & Innovations
+## Key Architecture & Innovations
 
 ### 1. Verifiable AI (IPFS Anchors)
 Prediction markets cannot rely on "black box" AI. When AIRA generates a market, it explicitly packages the real-world signals (e.g., Twitter sentiment, SerpAPI volume) and its raw reasoning into a JSON payload. This payload is hashed and permanently anchored to the Mantle blockchain as an `_ipfsCID` during the smart contract creation. **The AI's logic is cryptographically verifiable.**
@@ -22,7 +22,7 @@ AIRA features a custom-built WebSockets indexer running via Ethers.js and Prisma
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 *   **Smart Contracts:** Solidity, Hardhat, Ethers.js v6
 *   **Blockchain:** Mantle Network (Testnet/Mainnet)
@@ -33,14 +33,14 @@ AIRA features a custom-built WebSockets indexer running via Ethers.js and Prisma
 
 ---
 
-## ⛓️ Mantle Network Deployment
+## Mantle Network Deployment
 
 **Current Production Contract (Sepolia Testnet):**
 [`0xDD277CCB8cDa72D652CdcA4df09df5f2522fc846`](https://explorer.sepolia.mantle.xyz/address/0xDD277CCB8cDa72D652CdcA4df09df5f2522fc846)
 
 ---
 
-## 🚀 Local Quickstart
+## Local Quickstart
 
 ### Prerequisites
 - Node.js (v18+)
