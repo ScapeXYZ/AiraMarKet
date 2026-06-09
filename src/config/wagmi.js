@@ -1,7 +1,7 @@
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import { metaMaskWallet, injectedWallet } from '@rainbow-me/rainbowkit/wallets';
 import { createConfig, http } from 'wagmi';
-import { mantle, mantleTestnet } from 'wagmi/chains';
+import { mantle, mantleSepoliaTestnet } from 'wagmi/chains';
 
 const connectors = connectorsForWallets(
   [
@@ -18,9 +18,9 @@ const connectors = connectorsForWallets(
 
 export const config = createConfig({
   connectors,
-  chains: [mantle, mantleTestnet],
+  chains: [mantle, mantleSepoliaTestnet],
   transports: {
     [mantle.id]: http(),
-    [mantleTestnet.id]: http(),
+    [mantleSepoliaTestnet.id]: http(),
   },
 });

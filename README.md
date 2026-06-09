@@ -1,9 +1,8 @@
-# Aira Markets
+# AIRA Markets
 
-Aira Markets is a decentralized, autonomous prediction market protocol built on the Mantle Network. It leverages advanced AI agents for automated market creation and settlement, integrating decentralized oracle networks to maintain strict trustlessness and determinism.
+AIRA Markets is a decentralized prediction market on the Mantle Network where AI agents analyze real-world data and propose tradable market opportunities, while users retain full control of all financial decisions.
 
-## Overview
-Aira Markets introduces an automated economic layer where AI agents act as the primary drivers of market discovery, creation, and resolution, powered by real-time signal ingestion from various data providers.
+The system converts live data signals into structured YES/NO markets deployed on-chain. Users trade directly from their wallets, and all outcomes are resolved transparently through smart contracts. Every transaction is recorded on Mantle, ensuring full verifiability and trustless settlement.
 
 ## Key Features
 - **AI-Powered Autonomous Markets:** Markets are generated dynamically by AI agents analyzing global signals.

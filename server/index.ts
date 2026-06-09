@@ -9,17 +9,17 @@ import { TransparencyLogger } from './services/transparency_logger';
 import { MarketCache } from './services/market_cache';
 import { exec } from 'child_process';
 
-console.log("🚀 Starting AIRA Markets Autonomous Backend...");
+console.log("[SYSTEM] Starting AIRA Markets Autonomous Backend...");
 
 async function runPrismaMigrations() {
     if (process.env.USE_PRISMA === 'true') {
-        console.log("🔄 [DB] USE_PRISMA is enabled. Running database migrations/push...");
+        console.log("[DB] USE_PRISMA is enabled. Running database migrations/push...");
         return new Promise<void>((resolve) => {
             exec('npx prisma db push --accept-data-loss', (error, stdout, stderr) => {
                 if (error) {
-                    console.error("❌ [DB] Prisma db push failed:", error.message);
+                    console.error("[DB ERROR] Prisma db push failed:", error.message);
                 } else {
-                    console.log("✅ [DB] Prisma database schema synchronized successfully.");
+                    console.log("[DB OK] Prisma database schema synchronized successfully.");
                 }
                 resolve();
             });
@@ -27,8 +27,11 @@ async function runPrismaMigrations() {
     }
 }
 
+import { indexer } from './indexer';
+
 // Start sequence
 runPrismaMigrations().then(() => {
+    indexer.startIndexing();
     cryptoAgent;
     sportsAgent;
     politicsAgent;
@@ -37,6 +40,9 @@ runPrismaMigrations().then(() => {
 
     setTimeout(() => {
         SignalIngestionService.runIngestionCycle();
+        setInterval(() => {
+            SignalIngestionService.runIngestionCycle();
+        }, 60000); // 1 minute interval for continuous AI market generation
     }, 2000);
 });
 
@@ -118,10 +124,55 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    if (req.method === 'GET' && req.url?.startsWith('/api/portfolio/')) {
+        const address = req.url.split('/').pop()?.toLowerCase();
+        if (!address) {
+            res.writeHead(400); res.end('Invalid address'); return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        try {
+            const { PrismaClient } = await import('@prisma/client');
+            const prisma = new PrismaClient();
+            
+            const user = await prisma.user.findUnique({
+                where: { address },
+                include: { trades: { include: { market: true } } }
+            });
+            
+            if (!user) {
+                res.end(JSON.stringify({ totalWinnings: 0, activePositions: 0 }));
+                return;
+            }
+
+            const activePositionsList = [];
+            const uniqueActiveMarkets = new Set();
+            for (const trade of user.trades) {
+                if (!trade.market.resolved && !uniqueActiveMarkets.has(trade.marketId)) {
+                    uniqueActiveMarkets.add(trade.marketId);
+                    activePositionsList.push({
+                        id: trade.marketId,
+                        title: trade.market.title,
+                        side: trade.isYes ? 'YES' : 'NO',
+                        amount: trade.amount
+                    });
+                }
+            }
+            
+            res.end(JSON.stringify({ 
+                totalWinnings: user.totalWinnings, 
+                activePositionsCount: uniqueActiveMarkets.size,
+                activePositions: activePositionsList
+            }));
+        } catch(e) {
+            res.writeHead(500); res.end('DB Error');
+        }
+        return;
+    }
+
     res.writeHead(404);
     res.end('Not Found');
 });
 
 server.listen(3001, () => {
-    console.log("🔒 Transparency Log server running on port 3001");
+    console.log("[SERVER] Transparency Log server running on port 3001");
 });

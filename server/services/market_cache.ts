@@ -46,7 +46,8 @@ export class MarketCache {
         }
         try {
             this.ensureCacheExists();
-            const markets = await this.getPendingMarkets();
+            const data = fs.readFileSync(CACHE_FILE, 'utf-8');
+            const markets = JSON.parse(data) || [];
             markets.push(proposal);
             fs.writeFileSync(CACHE_FILE, JSON.stringify(markets, null, 2), 'utf-8');
             console.log(`[MARKET_CACHE] Proposal stored securely in filesystem database cache: ${proposal.title}`);

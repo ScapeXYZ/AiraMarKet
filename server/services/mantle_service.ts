@@ -38,11 +38,11 @@ export class MantleService {
         const marketContract = new ethers.Contract(this.contractAddress, abi, this.provider);
         
         marketContract.on("MarketCreated", (id, title, category, expiry, creator) => {
-            console.log(`\n[ON-CHAIN EVENT] 🔥 New Market Created: ${title} (ID: ${id}) by ${creator}`);
+            console.log(`\n[ON-CHAIN EVENT] New Market Created: ${title} (ID: ${id}) by ${creator}`);
         });
 
         marketContract.on("MarketResolved", (marketId, outcome, resolver) => {
-            console.log(`\n[ON-CHAIN EVENT] 🏁 Market ${marketId} Resolved as ${outcome ? 'YES' : 'NO'} by ${resolver}`);
+            console.log(`\n[ON-CHAIN EVENT] Market ${marketId} Resolved as ${outcome ? 'YES' : 'NO'} by ${resolver}`);
         });
     }
 

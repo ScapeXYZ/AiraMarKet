@@ -21,7 +21,20 @@ function App() {
   const isDarkMode = useAppStore(state => state.isDarkMode);
   const toggleTheme = useAppStore(state => state.toggleTheme);
   const profileData = useAppStore(state => state.profileData);
+  const toast = useAppStore(state => state.toast);
+  const hideToast = useAppStore(state => state.hideToast);
 
+  const colors = {
+    success: 'bg-bullish-green text-white border-bullish-green/50',
+    error: 'bg-bearish-red text-white border-bearish-red/50',
+    info: 'bg-surface border-outline-variant text-on-surface'
+  };
+
+  const icons = {
+    success: 'check_circle',
+    error: 'error',
+    info: 'info'
+  };
   return (
     <div className="min-h-[105vh] bg-background text-on-surface selection:bg-primary/20 flex flex-col w-full overflow-x-clip">
       {/* Background Texture Pattern dot grid */}
@@ -70,16 +83,7 @@ function App() {
           </nav>
         </div>
         <div className="flex items-center gap-6">
-          <div className="hidden lg:flex items-center bg-surface-variant rounded-full px-5 py-2 border border-outline-variant">
-            <span className="material-symbols-outlined text-on-surface-variant text-lg mr-2">search</span>
-            <input 
-              className="bg-transparent border-none outline-none text-sm font-medium w-48 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-0" 
-              placeholder="Search markets..." 
-              type="text"
-            />
-          </div>
           <div className="flex items-center gap-4 relative">
-            <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all flex items-center justify-center">sensors</button>
             
             <div className="relative flex items-center">
               <ConnectButton showBalance={false} chainStatus="none" />
@@ -92,11 +96,6 @@ function App() {
             >
               {isDarkMode ? 'light_mode' : 'dark_mode'}
             </button>
-
-            <div className="relative flex items-center justify-center">
-              <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all flex items-center justify-center">notifications</button>
-              <span className="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full ring-2 ring-surface"></span>
-            </div>
             <div className="h-10 w-10 rounded-full border-2 border-outline-variant p-0.5" onClick={() => navigate('/portfolio')} title="View Portfolio">
               <img 
                 alt="User avatar" 
@@ -157,6 +156,37 @@ function App() {
           <span className="text-[9px] font-bold uppercase tracking-widest font-mono">Top Traders</span>
         </button>
       </nav>
+      {/* Global Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-24 md:bottom-8 right-4 md:right-8 z-[100] flex flex-col gap-1 p-4 rounded-xl shadow-2xl border ${colors[toast.type]} animate-subtle-fade min-w-[300px] max-w-[400px]`}>
+          <div className="flex justify-between items-start mb-1">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">{icons[toast.type]}</span>
+              <span className="font-bold text-[10px] uppercase tracking-widest font-mono">{toast.title}</span>
+            </div>
+            <button onClick={hideToast} className="opacity-50 hover:opacity-100 transition-opacity">
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+          </div>
+          <p className="text-xs opacity-90 leading-relaxed font-medium">{toast.message}</p>
+          {toast.hash && (
+            <div className="mt-2 flex flex-col gap-1 border-t border-white/20 pt-2">
+              <span className="text-[9px] font-mono opacity-60">
+                CONTRACT: {import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS || "0xDD277CCB8cDa72D652CdcA4df09df5f2522fc846"}
+              </span>
+              <a 
+                href={`https://explorer.sepolia.mantle.xyz/tx/${toast.hash}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold font-mono underline opacity-80 hover:opacity-100 flex items-center gap-1"
+              >
+                VIEW ON MANTLE EXPLORER
+                <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+              </a>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

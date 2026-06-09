@@ -77,20 +77,20 @@ export default function Terminal() {
         functionName: 'claimWinnings',
         args: [activeMarket.realId]
       });
-      alert(`Claim submitted! Hash: ${hash}`);
+      useAppStore.getState().showToast("Claim Successful", "Winnings have been transferred to your wallet.", "success", hash);
     } catch(e) {
-      alert(e.message);
+      useAppStore.getState().showToast("Claim Failed", e.shortMessage || e.message, "error");
     }
   };
 
   const handleTrade = async () => {
     if (!isConnected) {
-       alert("Please connect your wallet first!");
+       useAppStore.getState().showToast("Wallet Disconnected", "Please connect your wallet first!", "error");
        return;
     }
     try {
        if (!activeMarket.realId) {
-           alert("Market ID missing. Ensure this market is verified on-chain.");
+           useAppStore.getState().showToast("Invalid Market", "Market ID missing. Ensure this market is verified on-chain.", "error");
            return;
        }
        const txValue = parseEther(tradeSize.toString());
@@ -121,32 +121,14 @@ export default function Terminal() {
          gas: gasLimit
        });
        
-       alert(`Transaction submitted! Hash: ${hash}`);
+       useAppStore.getState().showToast("Position Executed", `Successfully purchased ${selectedDirection} shares.`, "success", hash);
     } catch (err) {
        console.error(err);
-       alert("Transaction failed! " + err.message);
+       useAppStore.getState().showToast("Transaction Failed", err.shortMessage || err.message, "error");
     }
   };
 
-  const handleOracleResolve = async (outcome) => {
-    try {
-      const response = await fetch('http://localhost:3001/resolve-market', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ marketId: activeMarket.realId, outcome })
-      });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        alert(`Oracle Resolution Transaction submitted! Hash: ${data.txHash}`);
-      } else {
-        alert(`Oracle Resolution failed: ${data.error || 'Unknown error'}`);
-      }
-    } catch(err) {
-      alert("Resolution error: " + err.message);
-    }
-  };
-
-  const handleOwnerResolve = async (outcome) => {
+  const handleProposeResolution = async (outcome) => {
     try {
       const hash = await writeContractAsync({
         address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
@@ -157,18 +139,44 @@ export default function Terminal() {
               { "internalType": "uint256", "name": "_marketId", "type": "uint256" },
               { "internalType": "bool", "name": "_outcome", "type": "bool" }
             ],
-            "name": "resolveMarket",
+            "name": "proposeResolution",
             "outputs": [],
             "stateMutability": "nonpayable",
             "type": "function"
           }
         ],
-        functionName: 'resolveMarket',
-        args: [activeMarket.realId, outcome]
+        functionName: 'proposeResolution',
+        args: [activeMarket.realId, outcome],
+        value: parseEther("10.0")
       });
-      alert(`Fallback Owner Proposal/Resolution submitted! Hash: ${hash}`);
+      useAppStore.getState().showToast("Proposal Submitted", "Decentralized outcome proposed. 24h timelock initiated.", "success", hash);
     } catch(e) {
-      alert(e.message);
+      useAppStore.getState().showToast("Proposal Failed", e.shortMessage || e.message, "error");
+    }
+  };
+
+  const handleExecuteResolution = async () => {
+    try {
+      const hash = await writeContractAsync({
+        address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+        abi: [
+          ...abi,
+          {
+            "inputs": [
+              { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+            ],
+            "name": "executeResolution",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ],
+        functionName: 'executeResolution',
+        args: [activeMarket.realId]
+      });
+      useAppStore.getState().showToast("Resolution Executed", "Market resolved successfully on-chain.", "success", hash);
+    } catch(e) {
+      useAppStore.getState().showToast("Execution Failed", e.shortMessage || e.message, "error");
     }
   };
 
@@ -214,10 +222,7 @@ export default function Terminal() {
                 </div>
               </div>
             </div>
-            <div className="text-right border-l border-outline-variant pl-4 hidden sm:block">
-              <p className="text-[8px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">VOLATILITY</p>
-              <span className="font-bold text-[10px] text-on-surface">MED-HIGH</span>
-            </div>
+
           </div>
         </div>
 
@@ -275,50 +280,44 @@ export default function Terminal() {
                  ADMINISTRATIVE PROTOCOL RESOLUTION
                </h3>
                <p className="text-xs text-on-surface-variant max-w-lg mb-6">
-                 Trigger oracle resolution instantly or initiate the fallback owner timelock proposal.
+                 Propose market outcomes to the decentralized oracle or execute resolution after timelock.
                </p>
                
                <div className="flex flex-col sm:flex-row gap-6 w-full max-w-xl justify-center">
-                 {/* Oracle Resolution Section */}
+                 {/* Decentralized Proposal Section */}
                  <div className="p-5 bg-surface rounded-xl border border-primary/20 flex-grow shadow-sm flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] text-primary font-bold mb-1 tracking-widest uppercase font-mono">1. ORACLE RESOLVE (INSTANT)</p>
-                      <p className="text-[11px] text-on-surface-variant mb-4">Triggers immediate resolution via verified Chainlink Oracle node credentials (no delay).</p>
+                      <p className="text-[10px] text-primary font-bold mb-1 tracking-widest uppercase font-mono">1. PROPOSE OUTCOME</p>
+                      <p className="text-[11px] text-on-surface-variant mb-4">Propose an outcome to the decentralized oracle. Initiates a 24-hour dispute timelock.</p>
                     </div>
                     <div className="flex gap-2 justify-center">
                       <button 
-                        onClick={() => handleOracleResolve(true)}
+                        onClick={() => handleProposeResolution(true)}
                         className="px-4 py-2 bg-bullish-green/20 hover:bg-bullish-green text-bullish-green hover:text-white font-mono text-[10px] font-bold rounded uppercase tracking-wider transition-all"
-                      >
-                        Resolve YES
-                      </button>
-                      <button 
-                        onClick={() => handleOracleResolve(false)}
-                        className="px-4 py-2 bg-bearish-red/20 hover:bg-bearish-red text-bearish-red hover:text-white font-mono text-[10px] font-bold rounded uppercase tracking-wider transition-all"
-                      >
-                        Resolve NO
-                      </button>
-                    </div>
-                 </div>
-
-                 {/* Fallback Owner Section */}
-                 <div className="p-5 bg-surface rounded-xl border border-outline-variant flex-grow shadow-sm flex flex-col justify-between">
-                    <div>
-                      <p className="text-[10px] text-on-surface-variant font-bold mb-1 tracking-widest uppercase font-mono">2. FALLBACK OWNER (TIMELOCKED)</p>
-                      <p className="text-[11px] text-on-surface-variant mb-4">Proposes outcome. Enforces a strict 24-hour dispute timelock before on-chain execution.</p>
-                    </div>
-                    <div className="flex gap-2 justify-center">
-                      <button 
-                        onClick={() => handleOwnerResolve(true)}
-                        className="px-4 py-2 bg-surface-variant hover:bg-on-surface hover:text-surface text-on-surface font-mono text-[10px] font-bold rounded uppercase tracking-wider transition-all"
                       >
                         Propose YES
                       </button>
                       <button 
-                        onClick={() => handleOwnerResolve(false)}
-                        className="px-4 py-2 bg-surface-variant hover:bg-on-surface hover:text-surface text-on-surface font-mono text-[10px] font-bold rounded uppercase tracking-wider transition-all"
+                        onClick={() => handleProposeResolution(false)}
+                        className="px-4 py-2 bg-bearish-red/20 hover:bg-bearish-red text-bearish-red hover:text-white font-mono text-[10px] font-bold rounded uppercase tracking-wider transition-all"
                       >
                         Propose NO
+                      </button>
+                    </div>
+                 </div>
+
+                 {/* Execution Section */}
+                 <div className="p-5 bg-surface rounded-xl border border-outline-variant flex-grow shadow-sm flex flex-col justify-between">
+                    <div>
+                      <p className="text-[10px] text-on-surface-variant font-bold mb-1 tracking-widest uppercase font-mono">2. EXECUTE RESOLUTION</p>
+                      <p className="text-[11px] text-on-surface-variant mb-4">Execute the proposal after the dispute timelock has safely expired without contest.</p>
+                    </div>
+                    <div className="flex gap-2 justify-center">
+                      <button 
+                        onClick={() => handleExecuteResolution()}
+                        className="px-4 py-2 bg-surface-variant hover:bg-on-surface hover:text-surface text-on-surface font-mono text-[10px] font-bold rounded uppercase tracking-wider transition-all w-full"
+                      >
+                        Execute On-Chain
                       </button>
                     </div>
                  </div>
@@ -357,10 +356,7 @@ export default function Terminal() {
               <p className="text-[8px] font-bold text-on-surface-variant mb-0.5 uppercase tracking-widest font-mono">Open Interest</p>
               <p className="font-mono text-xs text-on-surface font-semibold">{activeMarket.openInterest}</p>
             </div>
-            <div className="p-2.5 bg-surface-variant/30 rounded border border-outline-variant/50">
-              <p className="text-[8px] font-bold text-on-surface-variant mb-0.5 uppercase tracking-widest font-mono">AI Drift</p>
-              <p className={`font-mono text-xs font-semibold ${activeMarket.drift.startsWith('+') ? 'text-bullish-green' : 'text-bearish-red'}`}>{activeMarket.drift}</p>
-            </div>
+
           </div>
         </div>
       </div>
@@ -409,50 +405,7 @@ export default function Terminal() {
           </button>
         </div>
 
-        <div className="sahara-panel rounded-xl flex-grow flex flex-col min-h-[500px] bg-surface">
-          <div className="px-4 py-3 border-b border-outline-variant flex items-center justify-between shrink-0">
-            <h3 className="font-bold text-[9px] text-on-surface tracking-widest uppercase">LIVE CHAT</h3>
-            <span className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest">2.4K WATCHING</span>
-          </div>
-          
-          <div className="flex-grow p-4 space-y-4 min-h-0 col-snap-container">
-            {messages.map((msg, index) => (
-              <div key={msg.id} className={`flex gap-3 col-snap-section ${index >= 2 ? 'opacity-65' : ''}`}>
-                {msg.type === 'bot' ? (
-                  <div className="flex-shrink-0 w-7 h-7 rounded bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <span className="material-symbols-outlined text-sm text-primary">smart_toy</span>
-                  </div>
-                ) : (
-                  <img className="w-7 h-7 rounded object-cover border border-outline-variant shrink-0" src={msg.avatar} alt="User" />
-                )}
-                <div className="space-y-1 flex-grow text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[9px] text-primary tracking-widest uppercase">{msg.sender}</span>
-                    <span className="text-[8px] font-bold text-on-surface-variant/50">{msg.time}</span>
-                  </div>
-                  <p className={`leading-relaxed text-[11px] ${msg.type === 'bot' ? 'bg-surface-variant/40 p-2.5 rounded-lg rounded-tl-none border border-outline-variant' : 'text-on-surface'}`}>
-                    {msg.content}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
 
-          <form onSubmit={handleSendChat} className="p-3 border-t border-outline-variant bg-surface-variant/10 shrink-0">
-            <div className="relative">
-              <input 
-                className="w-full bg-background border border-outline-variant rounded py-2 px-3 pr-10 text-xs focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/50" 
-                placeholder="Share insight..." 
-                type="text"
-                value={chatText}
-                onChange={(e) => setChatText(e.target.value)}
-              />
-              <button type="submit" className="absolute right-3 top-2 text-primary">
-                <span className="material-symbols-outlined text-base">send</span>
-              </button>
-            </div>
-          </form>
-        </div>
       </div>
     </main>
   );

@@ -6,7 +6,7 @@ import { useAccount, useWriteContract } from 'wagmi';
 
 // Example ABI
 const abi = [
-  { "inputs": [{ "internalType": "string", "name": "_title", "type": "string" }, { "internalType": "string", "name": "_category", "type": "string" }, { "internalType": "uint256", "name": "_resolutionTime", "type": "uint256" }], "name": "createMarket", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
+  { "inputs": [{ "internalType": "string", "name": "_title", "type": "string" }, { "internalType": "string", "name": "_category", "type": "string" }, { "internalType": "uint256", "name": "_resolutionTime", "type": "uint256" }, { "internalType": "string", "name": "_ipfsCID", "type": "string" }], "name": "createMarket", "outputs": [], "stateMutability": "payable", "type": "function" }
 ];
 
 export default function CreatorLab() {
@@ -108,21 +108,26 @@ export default function CreatorLab() {
 
   const handleLaunchOnChain = async (market) => {
     if (!isConnected) {
-      alert("Please connect your wallet first to deploy this market on-chain!");
+      useAppStore.getState().showToast("Wallet Disconnected", "Please connect your wallet first to deploy this market on-chain!", "error");
       return;
     }
     launchingMarketSet(market);
 
     try {
       const expirySeconds = BigInt(Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60));
+      const mockIpfsCID = `ipfs://Qm${Date.now()}VerifiableAILog`; // Hackathon MVP verifiability
+      
+      const { parseEther } = await import('viem');
+      
       const hash = await writeContractAsync({
         address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
         abi,
         functionName: 'createMarket',
-        args: [market.title, market.category, expirySeconds]
+        args: [market.title, market.category, expirySeconds, mockIpfsCID],
+        value: parseEther("2.0") // 2 MNT initial liquidity seed
       });
       
-      alert(`Transaction submitted! Waiting for confirmation...\nTx Hash: ${hash}`);
+      useAppStore.getState().showToast("Transaction Pending", "Waiting for network confirmation...", "info", hash);
       
       await fetch(`${import.meta.env.VITE_API_URL}/log-transparency`, {
         method: 'POST',
@@ -138,11 +143,11 @@ export default function CreatorLab() {
         })
       });
 
-      alert(`🎉 SECURE ON-CHAIN LAUNCH COMPLETE! \n"${market.title}" has been deployed directly onto the Mantle ledger!`);
+      useAppStore.getState().showToast("Deploy Complete", `"${market.title}" deployed securely on-chain!`, "success", hash);
       navigate('/feed');
     } catch (err) {
       console.error(err);
-      alert("Market creation failed: " + err.message);
+      useAppStore.getState().showToast("Deployment Failed", err.shortMessage || err.message, "error");
     } finally {
       launchingMarketSet(null);
     }
@@ -258,17 +263,30 @@ export default function CreatorLab() {
                           </div>
                         </div>
 
-                        <div className="py-3 border-y border-outline-variant">
-                          <div className="flex justify-between items-end mb-2 text-[9px]">
-                            <span className="font-mono text-on-surface-variant uppercase tracking-widest font-bold">Neural Sentiment</span>
+                        <div className="py-3 border-y border-outline-variant space-y-2">
+                          <div className="flex justify-between items-end mb-1 text-[9px]">
+                            <span className="font-mono text-on-surface-variant uppercase tracking-widest font-bold">Neural Sentiment (Probability)</span>
                             <div className="flex gap-3 font-mono font-bold">
                               <span className="text-bullish-green font-mono">YES {msg.yesProb}%</span>
                               <span className="text-bearish-red font-mono">NO {msg.noProb}%</span>
                             </div>
                           </div>
-                          <div className="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden flex">
+                          <div className="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden flex mb-4">
                             <div className="h-full bg-primary" style={{ width: `${msg.yesProb}%` }}></div>
                             <div className="h-full bg-secondary opacity-30" style={{ width: `${msg.noProb}%` }}></div>
+                          </div>
+
+                          <div className="bg-surface-variant/30 rounded border border-outline-variant/50 p-2">
+                             <div className="flex items-center gap-1.5 mb-1.5">
+                                <span className="material-symbols-outlined text-[10px] text-primary">data_object</span>
+                                <span className="text-[8px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">Raw AI Reasoning (Pre-IPFS Anchor)</span>
+                             </div>
+                             <p className="text-[9px] font-mono text-on-surface-variant leading-relaxed opacity-80 mb-1">
+                               <strong className="text-primary">SIGNALS:</strong> {msg.inputSignals || "SerpAPI trending search analysis, Twitter sentiment index."}
+                             </p>
+                             <p className="text-[9px] font-mono text-on-surface-variant leading-relaxed opacity-80 italic border-l-2 border-primary/30 pl-2">
+                               "{msg.reason || "Historical probability heavily favors this outcome based on localized news volume."}"
+                             </p>
                           </div>
                         </div>
 

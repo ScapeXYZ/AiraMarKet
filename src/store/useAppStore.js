@@ -21,6 +21,15 @@ const useAppStore = create((set) => ({
   
   activeMarket: {},
   setActiveMarket: (market) => set({ activeMarket: market }),
+
+  toast: null,
+  showToast: (title, message, type = 'info', hash = null) => {
+    set({ toast: { title, message, type, hash, id: Date.now() } });
+    setTimeout(() => {
+      set((state) => state.toast?.id === state.toast?.id ? { toast: null } : state);
+    }, 8000);
+  },
+  hideToast: () => set({ toast: null })
 }));
 
 export default useAppStore;

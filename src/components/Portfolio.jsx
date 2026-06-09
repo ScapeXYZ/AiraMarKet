@@ -1,14 +1,36 @@
 import React, { useState } from 'react';
 import useAppStore from '../store/useAppStore';
-import { useAccount } from 'wagmi';
+import { useAccount, useBalance } from 'wagmi';
 
 export default function Portfolio() {
   const { isConnected, address: walletAddress } = useAccount();
+  const { data: balanceData } = useBalance({
+    address: walletAddress,
+  });
   const profileData = useAppStore(state => state.profileData);
   const setProfileData = useAppStore(state => state.setProfileData);
   
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editForm, setEditForm] = useState(profileData);
+
+  const [portfolioStats, setPortfolioStats] = useState({ activePositions: 0, totalWinnings: 0 });
+
+  React.useEffect(() => {
+    if (walletAddress) {
+      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/portfolio/${walletAddress}`)
+        .then(res => res.json())
+        .then(data => {
+           if(data.activePositions !== undefined) {
+              setPortfolioStats({
+                 activePositions: data.activePositionsCount,
+                 totalWinnings: data.totalWinnings,
+                 tradesList: data.activePositions || []
+              });
+           }
+        })
+        .catch(err => console.error("Failed to load portfolio stats:", err));
+    }
+  }, [walletAddress]);
 
   return (
     <main className="pt-24 pb-4 px-4 w-full flex flex-col items-center max-w-5xl mx-auto z-10 flex-grow">
@@ -40,12 +62,21 @@ export default function Portfolio() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1">Profile Picture URL</label>
+                  <label className="block text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1">Upload Profile Picture</label>
                   <input 
-                    type="text" 
-                    value={editForm.picture} 
-                    onChange={(e) => setEditForm({...editForm, picture: e.target.value})}
-                    className="w-full bg-surface-variant border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary outline-none"
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setEditForm({...editForm, picture: reader.result});
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full bg-surface-variant border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary outline-none file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-primary/20 file:text-primary hover:file:bg-primary/30 cursor-pointer"
                   />
                 </div>
                 <div>
@@ -97,12 +128,12 @@ export default function Portfolio() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-8">
           <div className="sahara-panel p-6 rounded-xl flex flex-col items-center justify-center bg-surface-variant/30">
             <span className="material-symbols-outlined text-primary text-3xl mb-2">account_balance_wallet</span>
             <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Balance</p>
             <p className="text-xl font-bold font-mono text-on-surface">
-              {walletAddress ? '0.00 MNT' : '---'}
+              {walletAddress && balanceData ? `${Number(balanceData.formatted).toFixed(4)} ${balanceData.symbol}` : walletAddress ? '0.00 MNT' : '---'}
             </p>
           </div>
 
@@ -110,7 +141,7 @@ export default function Portfolio() {
             <span className="material-symbols-outlined text-bullish-green text-3xl mb-2">trending_up</span>
             <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">Active Positions</p>
             <p className="text-xl font-bold font-mono text-on-surface">
-              {walletAddress ? '0' : '---'}
+              {walletAddress ? portfolioStats.activePositions : '---'}
             </p>
           </div>
 
@@ -118,10 +149,38 @@ export default function Portfolio() {
             <span className="material-symbols-outlined text-amber-500 text-3xl mb-2">emoji_events</span>
             <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Winnings</p>
             <p className="text-xl font-bold font-mono text-on-surface">
-              {walletAddress ? '0.00 MNT' : '---'}
+              {walletAddress ? `${(portfolioStats.totalWinnings / 1e18).toFixed(4)} MNT` : '---'}
             </p>
           </div>
         </div>
+
+        {/* Trade History View */}
+        {walletAddress && portfolioStats.tradesList && portfolioStats.tradesList.length > 0 && (
+          <div className="w-full text-left mt-4 border-t border-outline-variant pt-8">
+            <h3 className="serif-heading text-xl mb-4 text-on-surface flex items-center gap-2">
+               <span className="material-symbols-outlined text-primary">history</span>
+               Active Open Orders
+            </h3>
+            <div className="space-y-3">
+               {portfolioStats.tradesList.map((trade, idx) => (
+                  <div key={idx} className="p-4 bg-surface-variant/20 border border-outline-variant rounded-lg flex justify-between items-center">
+                     <div>
+                        <p className="text-sm font-bold text-on-surface mb-1">{trade.title}</p>
+                        <p className="text-[10px] font-mono tracking-widest uppercase text-on-surface-variant">Market #{trade.id}</p>
+                     </div>
+                     <div className="text-right">
+                        <span className={`px-2 py-1 text-[10px] font-bold font-mono rounded ${trade.side === 'YES' ? 'bg-bullish-green/10 text-bullish-green' : 'bg-bearish-red/10 text-bearish-red'}`}>
+                          {trade.side} POSITION
+                        </span>
+                        <p className="text-sm font-bold mt-2 text-on-surface">
+                           {(trade.amount / 1e18).toFixed(2)} MNT
+                        </p>
+                     </div>
+                  </div>
+               ))}
+            </div>
+          </div>
+        )}
 
         {!walletAddress && (
           <button 

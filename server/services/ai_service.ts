@@ -10,8 +10,8 @@ export class AIService {
         console.log(`[AI_SERVICE] Analyzing signal for ${signal.category.toUpperCase()}: ${signal.topic.substring(0, 50)}...`);
         
         // Calculate a highly realistic and deterministic confidence score based on signal strength & sentiment
-        // Base confidence is signal_strength mapped from [10, 100] to [0.5, 0.9]
-        let baseConfidence = 0.5 + (Math.min(100, Math.max(10, signal.signal_strength)) - 10) * 0.0044; // maps 10-100 to 0.5-0.9
+        // Base confidence is signal_strength mapped from [10, 100] to [0.7, 0.95]
+        let baseConfidence = 0.7 + (Math.min(100, Math.max(10, signal.signal_strength)) - 10) * 0.0027; // maps 10-100 to 0.7-0.95
         
         // Slightly amplify confidence if the sentiment is bullish or bearish (stronger trend direction)
         if (signal.sentiment === 'bullish' || signal.sentiment === 'bearish') {

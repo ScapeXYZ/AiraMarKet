@@ -5,7 +5,7 @@ import { feedCategories } from '../mocks/data';
 import { useReadContract } from 'wagmi';
 
 // Example ABI for listing markets
-const abi = [{ "inputs": [], "name": "listMarkets", "outputs": [{ "components": [{"internalType": "uint256", "name": "id", "type": "uint256"}, {"internalType": "string", "name": "title", "type": "string"}, {"internalType": "string", "name": "category", "type": "string"}, {"internalType": "uint256", "name": "totalYesPool", "type": "uint256"}, {"internalType": "uint256", "name": "totalNoPool", "type": "uint256"}, {"internalType": "bool", "name": "resolved", "type": "bool"}], "internalType": "struct AiraMarketProtocol.Market[]", "name": "", "type": "tuple[]" }], "stateMutability": "view", "type": "function" }];
+const abi = [{"inputs":[],"name":"listMarkets","outputs":[{"components":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"uint256","name":"expiry","type":"uint256"},{"internalType":"uint256","name":"totalYesPool","type":"uint256"},{"internalType":"uint256","name":"totalNoPool","type":"uint256"},{"internalType":"address","name":"creator","type":"address"},{"internalType":"bool","name":"resolved","type":"bool"},{"internalType":"bool","name":"outcome","type":"bool"},{"internalType":"string","name":"title","type":"string"},{"internalType":"string","name":"category","type":"string"}],"internalType":"struct AiraMarketProtocol.Market[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"}];
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -147,12 +147,8 @@ export default function Feed() {
                       className="col-snap-section w-full aspect-[9/14.2] sahara-card rounded-xl overflow-hidden flex flex-col relative bg-surface border border-outline-variant/60 shadow-sm"
                     >
                       <div className="absolute inset-0 z-0">
-                        <img 
-                          className="w-full h-full object-cover opacity-15 grayscale hover:grayscale-0 transition-all duration-700" 
-                          src={card.bgImage}
-                          alt={card.title}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+                        <div className="w-full h-full bg-gradient-to-br from-primary/20 via-surface-variant/10 to-background opacity-40 transition-all duration-700 hover:opacity-70"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
                       </div>
                       
                       <div className="relative z-10 flex flex-col h-full p-5 justify-between animate-subtle-fade">
@@ -180,13 +176,7 @@ export default function Feed() {
                           </span>
                         </div>
 
-                        <div className="w-22 h-22 mx-auto rounded-xl border border-outline-variant p-0.5 bg-surface shadow-sm overflow-hidden shrink-0 flex items-center justify-center my-2.5 transition-transform hover:scale-105 duration-300">
-                          <img 
-                            className="w-full h-full rounded-lg object-cover" 
-                            src={card.passport} 
-                            alt={card.title} 
-                          />
-                        </div>
+
 
                         <div className="my-1 shrink-0 text-center">
                           <h4 className="font-display font-extrabold text-xs sm:text-sm text-on-surface leading-snug tracking-tight mb-1 text-center line-clamp-2 px-1">

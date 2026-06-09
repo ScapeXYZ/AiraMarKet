@@ -17,3 +17,36 @@ model PendingMarket {
   status     String
   createdAt  DateTime @default(now())
 }
+
+model User {
+  address       String   @id
+  nickname      String?
+  avatar        String?
+  totalWinnings Float    @default(0)
+  totalVolume   Float    @default(0)
+  trades        Trade[]
+  createdAt     DateTime @default(now())
+}
+
+model Market {
+  id           Int      @id
+  title        String
+  category     String
+  totalYesPool Float    @default(0)
+  totalNoPool  Float    @default(0)
+  resolved     Boolean  @default(false)
+  outcome      Boolean?
+  trades       Trade[]
+  createdAt    DateTime @default(now())
+}
+
+model Trade {
+  id        String   @id
+  marketId  Int
+  market    Market   @relation(fields: [marketId], references: [id])
+  userAddr  String
+  user      User     @relation(fields: [userAddr], references: [address])
+  isYes     Boolean
+  amount    Float
+  createdAt DateTime @default(now())
+}

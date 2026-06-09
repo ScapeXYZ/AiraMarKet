@@ -41,7 +41,7 @@ export class SignalIngestionService {
     static async fetchCryptoSignals(): Promise<NormalizedSignal[]> {
         try {
             const res = await axios.get('https://api.coingecko.com/api/v3/search/trending');
-            const coins = res.data.coins.slice(0, 2); // Top 2 trending
+            const coins = res.data.coins.slice(0, 10); // Top 10 trending
             
             return coins.map((item: any) => ({
                 category: "crypto",
@@ -60,7 +60,7 @@ export class SignalIngestionService {
     static async fetchTechSignals(): Promise<NormalizedSignal[]> {
         try {
             const topRes = await axios.get('https://hacker-news.firebaseio.com/v0/topstories.json');
-            const topIds = topRes.data.slice(0, 2);
+            const topIds = topRes.data.slice(0, 10);
             
             const signals: NormalizedSignal[] = [];
             for (const id of topIds) {
@@ -84,8 +84,10 @@ export class SignalIngestionService {
 
     static async fetchPoliticsSignals(): Promise<NormalizedSignal[]> {
         try {
-            // Using Reddit as a free robust JSON feed
-            const res = await axios.get('https://www.reddit.com/r/politics/top.json?limit=2');
+            // Using Reddit as a free robust JSON feed with a mock User-Agent to bypass 403 blocks
+            const res = await axios.get('https://www.reddit.com/r/politics/top.json?limit=10', {
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 AiraMarket/1.0' }
+            });
             const posts = res.data.data.children;
             
             return posts.map((post: any) => ({
@@ -105,7 +107,7 @@ export class SignalIngestionService {
     static async fetchSportsSignals(): Promise<NormalizedSignal[]> {
         try {
             const res = await axios.get('https://site.api.espn.com/apis/site/v2/sports/football/nfl/news');
-            const articles = res.data.articles.slice(0, 2);
+            const articles = res.data.articles.slice(0, 10);
             
             return articles.map((article: any) => ({
                 category: "sports",
