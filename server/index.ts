@@ -173,6 +173,7 @@ const server = http.createServer(async (req, res) => {
     res.end('Not Found');
 });
 
-server.listen(3001, () => {
-    console.log("[SERVER] Transparency Log server running on port 3001");
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+    console.log(`[SERVER] Transparency Log server running on port ${PORT}`);
 });

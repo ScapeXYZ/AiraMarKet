@@ -18,7 +18,7 @@ Most prediction markets fail because the first trader dictates the entire liquid
 When a market concludes, it is resolved via a Decentralized Optimistic Oracle. Anyone can propose a resolution outcome, but they must stake a **10 MNT Slashing Bond**. If they lie, their funds are slashed.
 
 ### 4. Real-Time Mantle Indexing
-AIRA features a custom-built WebSockets indexer running via Ethers.js and Prisma. It actively monitors the Mantle ledger for `TradeRecorded` and `WinningsRedeemed` events, keeping the highly optimized React frontend perfectly synced with the blockchain in real-time, eliminating the need for slow RPC polling.
+AIRA features a custom-built real-time event indexer running via Ethers.js and Prisma. It actively monitors the Mantle ledger for `TradeRecorded` and `WinningsRedeemed` events using JSON-RPC polling, keeping the highly optimized React frontend perfectly synced with the blockchain in real-time, utilizing transaction-level database idempotency for absolute reliability.
 
 ---
 

@@ -73,3 +73,7 @@ coverage.json
 wallet.json
 .secret
 keys.json
+
+# Social Media & Promotional files
+social_media_captions.md
+
