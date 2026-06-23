@@ -16,6 +16,8 @@ const CONTRACT_ADDRESS = process.env.VITE_MANTLE_CONTRACT_ADDRESS || "";
 export class IndexerService {
   private provider: ethers.JsonRpcProvider;
   private contract: ethers.Contract;
+  private lastProcessedBlock: number = 0;
+  private isPolling: boolean = false;
 
   constructor() {
     // Read from .env, fallback to Sepolia Testnet to avoid breaking current environment
@@ -29,80 +31,142 @@ export class IndexerService {
         console.error("[INDEXER] Missing VITE_MANTLE_CONTRACT_ADDRESS in .env");
         return;
     }
-    console.log(`[INDEXER] Starting real-time indexing for contract ${CONTRACT_ADDRESS}...`);
+    console.log(`[INDEXER] Starting real-time block polling indexer for contract ${CONTRACT_ADDRESS}...`);
 
-    this.contract.on("MarketCreated", async (id, title, category, expiry, creator, event) => {
+    try {
+        const currentBlock = await this.provider.getBlockNumber();
+        // Start from recent blocks to avoid querying too many historical logs initially
+        this.lastProcessedBlock = Math.max(0, currentBlock - 500); 
+        console.log(`[INDEXER] Initialized block indexing from block ${this.lastProcessedBlock}`);
+    } catch (e: any) {
+        console.error("[INDEXER] Failed to get initial block number, defaulting to 0:", e.message);
+        this.lastProcessedBlock = 0;
+    }
+
+    // Poll every 10 seconds
+    setInterval(() => {
+        this.pollEvents();
+    }, 10000);
+    
+    // Trigger first poll immediately
+    this.pollEvents();
+  }
+
+  async pollEvents() {
+    if (this.isPolling) return;
+    this.isPolling = true;
+    try {
+      const latestBlock = await this.provider.getBlockNumber();
+      if (latestBlock > this.lastProcessedBlock) {
+        const fromBlock = this.lastProcessedBlock + 1;
+        const toBlock = latestBlock;
+
+        console.log(`[INDEXER] Polling blocks ${fromBlock} to ${toBlock}...`);
+        
+        // Fetch all events for the contract in the block range
+        const logs = await this.contract.queryFilter("*", fromBlock, toBlock);
+
+        for (const log of logs) {
+          try {
+            await this.processLog(log);
+          } catch (err: any) {
+            console.error(`[INDEXER] Error processing log:`, err.message);
+          }
+        }
+
+        this.lastProcessedBlock = toBlock;
+      }
+    } catch (error: any) {
+      console.error("[INDEXER] Error during polling cycle:", error.message);
+    } finally {
+      this.isPolling = false;
+    }
+  }
+
+  async processLog(log: any) {
+    const eventName = log.eventName;
+    if (!eventName) return;
+
+    const txHash = log.transactionHash || log.log?.transactionHash || `tx-${Date.now()}`;
+
+    if (eventName === "MarketCreated") {
+      const [id, title, category, expiry, creator] = log.args;
       console.log(`[INDEXER] New Market Created: ${title} (ID: ${id})`);
       try {
-          await prisma.market.create({
-            data: {
-              id: Number(id),
-              title,
-              category,
-            }
-          });
-      } catch (e) {
-          console.error("[INDEXER] Failed to insert Market:", e);
+        await prisma.market.create({
+          data: {
+            id: Number(id),
+            title,
+            category,
+          }
+        });
+      } catch (e: any) {
+        if (!e.message.includes("Unique constraint failed")) {
+          console.error("[INDEXER] Failed to insert Market:", e.message);
+        }
       }
-    });
-
-    this.contract.on("TradeRecorded", async (marketId, user, position, amount, event) => {
+    } else if (eventName === "TradeRecorded") {
+      const [marketId, user, position, amount] = log.args;
       const isYes = position === "YES";
       console.log(`[INDEXER] Trade Recorded: Market ${marketId}, User ${user}, Amount ${amount}`);
       try {
-          // Ensure user exists
-          await prisma.user.upsert({
-            where: { address: user },
-            update: { totalVolume: { increment: Number(ethers.formatEther(amount)) } },
-            create: { address: user, totalVolume: Number(ethers.formatEther(amount)) }
-          });
+        const userAddr = user.toLowerCase();
+        // Ensure user exists
+        await prisma.user.upsert({
+          where: { address: userAddr },
+          update: { totalVolume: { increment: Number(ethers.formatEther(amount)) } },
+          create: { address: userAddr, totalVolume: Number(ethers.formatEther(amount)) }
+        });
 
-          // Create trade
-          await prisma.trade.create({
-            data: {
-              id: event.log.transactionHash,
-              marketId: Number(marketId),
-              userAddr: user,
-              isYes,
-              amount: Number(ethers.formatEther(amount)),
-            }
-          });
+        // Create trade
+        await prisma.trade.create({
+          data: {
+            id: txHash,
+            marketId: Number(marketId),
+            userAddr: userAddr,
+            isYes,
+            amount: Number(ethers.formatEther(amount)),
+          }
+        });
 
-          // Update market pool
-          const poolUpdate = isYes ? { totalYesPool: { increment: Number(ethers.formatEther(amount)) } } : { totalNoPool: { increment: Number(ethers.formatEther(amount)) } };
-          await prisma.market.update({
-              where: { id: Number(marketId) },
-              data: poolUpdate
-          });
-      } catch (e) {
-          console.error("[INDEXER] Failed to record Trade:", e);
+        // Update market pool
+        const poolUpdate = isYes 
+          ? { totalYesPool: { increment: Number(ethers.formatEther(amount)) } } 
+          : { totalNoPool: { increment: Number(ethers.formatEther(amount)) } };
+          
+        await prisma.market.update({
+          where: { id: Number(marketId) },
+          data: poolUpdate
+        });
+      } catch (e: any) {
+        if (!e.message.includes("Unique constraint failed")) {
+          console.error("[INDEXER] Failed to record Trade:", e.message);
+        }
       }
-    });
-
-    this.contract.on("MarketResolved", async (marketId, outcome, resolver, event) => {
+    } else if (eventName === "MarketResolved") {
+      const [marketId, outcome, resolver] = log.args;
       console.log(`[INDEXER] Market ${marketId} Resolved. Outcome: ${outcome ? "YES" : "NO"}`);
       try {
-          await prisma.market.update({
-            where: { id: Number(marketId) },
-            data: { resolved: true, outcome }
-          });
-      } catch (e) {
-          console.error("[INDEXER] Failed to resolve Market:", e);
+        await prisma.market.update({
+          where: { id: Number(marketId) },
+          data: { resolved: true, outcome }
+        });
+      } catch (e: any) {
+        console.error("[INDEXER] Failed to resolve Market:", e.message);
       }
-    });
-
-    this.contract.on("WinningsRedeemed", async (marketId, user, amount, event) => {
+    } else if (eventName === "WinningsRedeemed") {
+      const [marketId, user, amount] = log.args;
       console.log(`[INDEXER] Winnings Redeemed: Market ${marketId}, User ${user}, Amount ${amount}`);
       try {
-          // Update User.totalWinnings dynamically!
-          await prisma.user.update({
-            where: { address: user },
-            data: { totalWinnings: { increment: Number(amount) } } // Keep as raw numeric format for precision
-          });
-      } catch (e) {
-          console.error("[INDEXER] Failed to log winnings:", e);
+        const userAddr = user.toLowerCase();
+        await prisma.user.update({
+          where: { address: userAddr },
+          data: { totalWinnings: { increment: Number(ethers.formatEther(amount)) } }
+        });
+      } catch (e: any) {
+        console.error("[INDEXER] Failed to log winnings:", e.message);
       }
-    });
+    }
   }
 }
 

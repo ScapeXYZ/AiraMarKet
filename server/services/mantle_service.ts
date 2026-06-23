@@ -24,8 +24,6 @@ export class MantleService {
         this.contractAddress = process.env.VITE_MANTLE_CONTRACT_ADDRESS || "";
         if (!this.contractAddress) {
             console.warn("[MANTLE_SERVICE] VITE_MANTLE_CONTRACT_ADDRESS is not set. Oracle resolution will fail.");
-        } else {
-            this.listenToEvents();
         }
     }
 
