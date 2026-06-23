@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html class="dark" lang="en">
   <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -82,6 +82,7 @@
       .sahara-gradient-text {
           background: linear-gradient(135deg, #c2652a 0%, #8a4315 100%);
           -webkit-background-clip: text;
+          background-clip: text;
           -webkit-text-fill-color: transparent;
       }
       /* Custom Slider Styling Sahara */
@@ -155,6 +156,13 @@
       .market-card:hover {
           border-color: var(--primary);
           transform: translateY(-2px);
+      }
+      .no-scrollbar::-webkit-scrollbar {
+          display: none;
+      }
+      .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
       }
     </style>
     <script id="tailwind-config">

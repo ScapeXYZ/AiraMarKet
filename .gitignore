@@ -34,6 +34,7 @@ jspm_packages/
 
 # dotenv environment variable files
 .env
+.env*
 .env.development.local
 .env.test.local
 .env.production.local
@@ -73,6 +74,9 @@ coverage.json
 wallet.json
 .secret
 keys.json
+private_key*
+*.key
+*.pem
 
 # Social Media & Promotional files
 social_media_captions.md

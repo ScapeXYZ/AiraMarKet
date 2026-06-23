@@ -169,8 +169,8 @@ export default function CreatorLab() {
         </div>
       )}
 
-      <main className="pt-24 pb-4 px-4 w-full min-h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-7xl mx-auto z-10 relative flex-grow">
-        <div className="col-span-12 lg:col-span-4 flex flex-col justify-between h-auto bg-surface-variant/20 border border-outline-variant rounded-xl p-5">
+      <main className="pt-24 pb-24 md:pb-4 px-4 w-full min-h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-7xl mx-auto z-10 relative flex-grow">
+        <div className="col-span-12 lg:col-span-4 flex flex-col justify-between h-auto bg-surface-variant/20 border border-outline-variant rounded-xl p-5 order-2 lg:order-1">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary-container text-primary font-mono text-[9px] tracking-widest uppercase font-bold animate-pulse">
               <span className="material-symbols-outlined text-[13px]">auto_awesome</span>
@@ -215,7 +215,7 @@ export default function CreatorLab() {
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-8 bg-surface rounded-xl border border-outline-variant shadow-lg p-5 flex flex-col h-auto">
+        <div className="col-span-12 lg:col-span-8 bg-surface rounded-xl border border-outline-variant shadow-lg p-5 flex flex-col h-auto order-1 lg:order-2">
           <div className="flex-grow pr-2 space-y-6 min-h-0 col-snap-container">
             {creatorMessages.map((msg) => (
               <div key={msg.id} className="flex items-start gap-4 col-snap-section">

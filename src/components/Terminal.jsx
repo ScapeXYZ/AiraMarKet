@@ -182,8 +182,8 @@ export default function Terminal() {
 
   if (!activeMarket.realId) {
     return (
-      <main className="pt-24 pb-4 px-4 w-full min-h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-[1600px] mx-auto flex-grow z-10">
-        <div className="col-span-12 flex flex-col items-center justify-center h-full w-full bg-surface rounded-xl border border-outline/20">
+      <main className="pt-24 pb-24 md:pb-4 px-4 w-full min-h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-[1600px] mx-auto flex-grow z-10">
+        <div className="col-span-12 flex flex-col items-center justify-center h-full w-full bg-surface rounded-xl border border-outline/20 p-8 text-center">
           <span className="material-symbols-outlined text-4xl text-on-surface-variant mb-4">candlestick_chart</span>
           <p className="text-on-surface font-mono tracking-widest text-sm">SELECT A MARKET FROM THE FEED TO TRADE</p>
           <button onClick={() => navigate('/feed')} className="mt-6 px-6 py-2 bg-primary text-white text-xs font-bold uppercase rounded hover:bg-primary/90 transition-all">Go To Feed</button>
@@ -197,7 +197,7 @@ export default function Terminal() {
   const potentialPayout = +(estShares * 1.00).toFixed(2);
 
   return (
-    <main className="pt-24 pb-4 px-4 w-full min-h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-[1600px] mx-auto flex-grow z-10">
+    <main className="pt-24 pb-24 md:pb-4 px-4 w-full min-h-[calc(100vh-100px)] grid grid-cols-12 gap-4 max-w-[1600px] mx-auto flex-grow z-10">
       <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-4 h-auto">
         <div className="sahara-panel p-4 rounded-xl flex items-center justify-between gap-4 bg-surface shrink-0">
           <div className="flex items-center gap-4">
@@ -226,18 +226,27 @@ export default function Terminal() {
           </div>
         </div>
 
-        <div className="sahara-panel rounded-xl p-4 relative flex-grow flex flex-col min-h-[400px] bg-surface justify-between">
-          <div className="flex justify-between items-center mb-3">
-            <div className="flex gap-1.5 p-0.5 bg-surface-variant rounded-lg">
-              {['PROBABILITY', 'VOLUME', 'POSITIONS', 'ADMIN CONTROL'].map(tab => (
-                <button 
-                  key={tab}
-                  className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${activeTab === tab ? 'bg-surface text-primary shadow-xs' : 'bg-transparent text-on-surface-variant hover:text-on-surface'}`}
-                  onClick={() => handleTabChange(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
+        <div className="sahara-panel rounded-xl p-4 relative flex-grow flex flex-col min-h-[300px] md:min-h-[400px] bg-surface justify-between">
+          <div className="flex justify-between items-center mb-3 gap-2">
+            <div className="flex gap-1 p-0.5 bg-surface-variant rounded-lg overflow-x-auto max-w-[220px] sm:max-w-none no-scrollbar">
+              {['PROBABILITY', 'VOLUME', 'POSITIONS', 'ADMIN CONTROL'].map(tab => {
+                const tabLabels = {
+                  'PROBABILITY': 'PROB',
+                  'VOLUME': 'VOL',
+                  'POSITIONS': 'MY POS',
+                  'ADMIN CONTROL': 'ADMIN'
+                };
+                return (
+                  <button 
+                    key={tab}
+                    className={`px-2.5 md:px-3 py-1 rounded-md text-[9px] md:text-[10px] font-bold transition-all shrink-0 ${activeTab === tab ? 'bg-surface text-primary shadow-xs' : 'bg-transparent text-on-surface-variant hover:text-on-surface'}`}
+                    onClick={() => handleTabChange(tab)}
+                  >
+                    <span className="hidden sm:inline">{tab}</span>
+                    <span className="sm:hidden">{tabLabels[tab]}</span>
+                  </button>
+                );
+              })}
             </div>
             <div className="flex items-center gap-3 font-bold text-[10px] text-on-surface-variant">
               {['1H', '4H', '1D', '1W'].map(range => (

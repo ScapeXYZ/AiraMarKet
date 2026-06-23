@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 const useAppStore = create((set) => ({
-  isDarkMode: false,
+  isDarkMode: true,
   toggleTheme: () => set((state) => {
     const nextVal = !state.isDarkMode;
     if (nextVal) {

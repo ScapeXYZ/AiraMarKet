@@ -41,10 +41,11 @@ function App() {
       <div className="fixed inset-0 sand-pattern pointer-events-none z-0"></div>
 
       {/* Top Navigation */}
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 md:px-12 h-20 bg-surface/90 backdrop-blur-md border-b border-outline-variant">
-        <div className="flex items-center gap-10">
+      {/* Top Navigation */}
+      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-3 md:px-12 h-20 bg-surface/90 backdrop-blur-md border-b border-outline-variant">
+        <div className="flex items-center gap-4 md:gap-10">
           <span 
-            className="font-bold text-xl tracking-tight sahara-gradient-text uppercase cursor-pointer font-display"
+            className="font-bold text-base sm:text-lg md:text-xl tracking-tight sahara-gradient-text uppercase cursor-pointer font-display shrink-0"
             onClick={() => navigate('/landing')}
           >
             AIRA MARKETS
@@ -82,21 +83,21 @@ function App() {
             </button>
           </nav>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4 relative">
+        <div className="flex items-center gap-2 md:gap-6">
+          <div className="flex items-center gap-1.5 sm:gap-4 relative">
             
-            <div className="relative flex items-center">
+            <div className="relative flex items-center shrink-0">
               <ConnectButton showBalance={false} chainStatus="none" />
             </div>
             
             <button 
-              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all p-2 rounded-full hover:bg-surface-variant/40 flex items-center justify-center"
+              className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all p-1.5 rounded-full hover:bg-surface-variant/40 flex items-center justify-center text-lg sm:text-xl"
               onClick={toggleTheme}
               title={isDarkMode ? "Switch to Day Mode" : "Switch to Night Mode"}
             >
               {isDarkMode ? 'light_mode' : 'dark_mode'}
             </button>
-            <div className="h-10 w-10 rounded-full border-2 border-outline-variant p-0.5" onClick={() => navigate('/portfolio')} title="View Portfolio">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full border-2 border-outline-variant p-0.5 shrink-0" onClick={() => navigate('/portfolio')} title="View Portfolio">
               <img 
                 alt="User avatar" 
                 className="w-full h-full rounded-full object-cover grayscale hover:grayscale-0 transition-all cursor-pointer" 
@@ -124,36 +125,36 @@ function App() {
           className={`flex flex-col items-center gap-1 transition-all ${currentView === 'landing' ? 'text-primary font-bold' : 'text-on-surface-variant opacity-60'}`}
           onClick={() => navigate('/landing')}
         >
-          <span className="material-symbols-outlined">explore</span>
-          <span className="text-[9px] font-bold uppercase tracking-widest font-mono">Markets</span>
+          <span className="material-symbols-outlined text-xl">dashboard</span>
+          <span className="text-[8px] font-bold uppercase tracking-widest font-mono">Markets</span>
         </button>
         <button 
           className={`flex flex-col items-center gap-1 transition-all ${currentView === 'feed' ? 'text-primary font-bold' : 'text-on-surface-variant opacity-60'}`}
           onClick={() => navigate('/feed')}
         >
-          <span className="material-symbols-outlined">explore</span>
-          <span className="text-[9px] font-bold uppercase tracking-widest font-mono">Core Feed</span>
+          <span className="material-symbols-outlined text-xl">explore</span>
+          <span className="text-[8px] font-bold uppercase tracking-widest font-mono">Core Feed</span>
         </button>
         <button 
           className={`flex flex-col items-center gap-1 transition-all ${currentView === 'creator' ? 'text-primary font-bold' : 'text-on-surface-variant opacity-60'}`}
           onClick={() => navigate('/creator')}
         >
-          <span className="material-symbols-outlined">smart_toy</span>
-          <span className="text-[9px] font-bold uppercase tracking-widest font-mono">AI Creator</span>
+          <span className="material-symbols-outlined text-xl">smart_toy</span>
+          <span className="text-[8px] font-bold uppercase tracking-widest font-mono">AI Creator</span>
         </button>
         <button 
           className={`flex flex-col items-center gap-1 transition-all ${currentView === 'terminal' ? 'text-primary font-bold' : 'text-on-surface-variant opacity-60'}`}
           onClick={() => navigate('/terminal')}
         >
-          <span className="material-symbols-outlined">account_balance</span>
-          <span className="text-[9px] font-bold uppercase tracking-widest font-mono">Terminal</span>
+          <span className="material-symbols-outlined text-xl">candlestick_chart</span>
+          <span className="text-[8px] font-bold uppercase tracking-widest font-mono">Terminal</span>
         </button>
         <button 
           className={`flex flex-col items-center gap-1 transition-all ${currentView === 'leaderboard' ? 'text-primary font-bold' : 'text-on-surface-variant opacity-60'}`}
           onClick={() => navigate('/leaderboard')}
         >
-          <span className="material-symbols-outlined">leaderboard</span>
-          <span className="text-[9px] font-bold uppercase tracking-widest font-mono">Top Traders</span>
+          <span className="material-symbols-outlined text-xl">leaderboard</span>
+          <span className="text-[8px] font-bold uppercase tracking-widest font-mono">Top Traders</span>
         </button>
       </nav>
       {/* Global Toast Notification */}

@@ -12,6 +12,12 @@ export default function Feed() {
   const setActiveMarket = useAppStore(state => state.setActiveMarket);
   const [activeFeedFilter, setActiveFeedFilter] = useState('ACTIVE');
   const [feedCards, setFeedCards] = useState([]);
+  const [activeCategoryTab, setActiveCategoryTab] = useState('TECH');
+
+  const handleCategoryClick = (catId) => {
+    setActiveCategoryTab(catId);
+    scrollToColumn(catId);
+  };
 
   // Use wagmi to fetch markets
   const { data: liveMarkets } = useReadContract({
@@ -81,7 +87,7 @@ export default function Feed() {
   return (
     <div className="pt-20 flex flex-col w-full min-h-[calc(100vh-80px)] bg-background relative z-10">
       {/* Glassy, Floating Unified Status Selector & Category Anchor Bar */}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[45] flex flex-col md:flex-row items-center gap-4 bg-surface/90 backdrop-blur-md border border-outline-variant rounded-2xl md:rounded-full p-2 shadow-lg w-auto max-w-[95%]">
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[45] flex flex-col md:flex-row items-center gap-2 md:gap-4 bg-surface/90 backdrop-blur-md border border-outline-variant rounded-2xl md:rounded-full p-2 shadow-lg w-auto max-w-[95%]">
         <div className="flex items-center gap-1 bg-surface-variant/40 border border-outline-variant/60 rounded-full p-1 font-mono">
           <button 
             className={`px-4.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase transition-all flex items-center gap-1.5 ${activeFeedFilter === 'COMING' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
@@ -106,12 +112,12 @@ export default function Feed() {
           </button>
         </div>
         <div className="hidden md:block h-6 w-px bg-outline-variant/80"></div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-[280px] sm:max-w-md no-scrollbar">
           {feedCategories.map((col) => (
             <button 
               key={col.id}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold font-mono tracking-wider transition-all uppercase text-on-surface-variant hover:text-primary hover:bg-surface-variant/40"
-              onClick={() => scrollToColumn(col.id)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold font-mono tracking-wider transition-all uppercase shrink-0 ${activeCategoryTab === col.id ? 'bg-primary/10 text-primary border border-primary/20' : 'text-on-surface-variant hover:text-primary border border-transparent'}`}
+              onClick={() => handleCategoryClick(col.id)}
             >
               <span className="material-symbols-outlined text-[13px] leading-none">{col.icon}</span>
               <span>{col.label.replace(' Feed', '')}</span>
@@ -120,7 +126,8 @@ export default function Feed() {
         </div>
       </div>
 
-      <main className="pt-16 pb-4 px-4 w-full h-auto overflow-x-auto flex gap-6 z-10 scrollbar-thin">
+      {/* Desktop Column Dashboard */}
+      <main className="hidden md:flex pt-16 pb-4 px-4 w-full h-auto overflow-x-auto gap-6 z-10 scrollbar-thin">
         {feedCategories.map((col) => {
           const cardsInCol = feedCards.filter(card => card.category === col.id && card.status === activeFeedFilter);
           return (
@@ -176,8 +183,6 @@ export default function Feed() {
                           </span>
                         </div>
 
-
-
                         <div className="my-1 shrink-0 text-center">
                           <h4 className="font-display font-extrabold text-xs sm:text-sm text-on-surface leading-snug tracking-tight mb-1 text-center line-clamp-2 px-1">
                             {card.title}
@@ -229,6 +234,120 @@ export default function Feed() {
                   ))
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 bg-surface-variant/10 border border-dashed border-outline-variant rounded-xl">
+                    <span className="material-symbols-outlined text-primary/30 text-3xl mb-2 animate-pulse">inventory_2</span>
+                    <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase">NO MATCHING PREDICTIONS</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </main>
+
+      {/* Mobile Stream Feed */}
+      <main className="md:hidden pt-44 pb-24 px-4 w-full flex flex-col gap-4 z-10">
+        {feedCategories.filter(c => c.id === activeCategoryTab).map((col) => {
+          const cardsInCol = feedCards.filter(card => card.category === col.id && card.status === activeFeedFilter);
+          return (
+            <div key={col.id} className="w-full flex flex-col bg-surface border border-outline-variant rounded-xl shadow-xs animate-subtle-fade">
+              <div className="px-4 py-3 border-b border-outline-variant flex justify-between items-center bg-surface-variant/20">
+                <div className="flex items-center gap-2">
+                  <span className={`material-symbols-outlined text-base ${col.color}`}>{col.icon}</span>
+                  <h3 className="font-bold text-xs uppercase tracking-widest text-on-surface">{col.label}</h3>
+                </div>
+                <span className="font-mono text-[9px] font-bold bg-primary-container text-primary px-2 py-0.5 rounded-full">
+                  {cardsInCol.length} MATCHED
+                </span>
+              </div>
+              
+              <div className="p-3 space-y-4">
+                {cardsInCol.length > 0 ? (
+                  cardsInCol.map((card) => (
+                    <div 
+                      key={card.id} 
+                      className="w-full sahara-card rounded-xl overflow-hidden flex flex-col relative bg-surface border border-outline-variant/60 shadow-sm"
+                    >
+                      <div className="absolute inset-0 z-0">
+                        <div className="w-full h-full bg-gradient-to-br from-primary/10 via-surface-variant/5 to-background opacity-45"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-transparent"></div>
+                      </div>
+                      
+                      <div className="relative z-10 flex flex-col p-4 justify-between gap-4">
+                        <div className="flex justify-between items-center">
+                          {card.status === 'COMING' && (
+                            <span className="border border-amber-500/30 bg-amber-500/10 text-amber-500 text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 font-mono uppercase">
+                              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>
+                              Coming Soon
+                            </span>
+                          )}
+                          {card.status === 'ACTIVE' && (
+                            <span className="border border-bullish-green/30 bg-bullish-green/10 text-bullish-green text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 font-mono uppercase">
+                              <span className="w-1.5 h-1.5 bg-bullish-green rounded-full animate-ping"></span>
+                              Active Live
+                            </span>
+                          )}
+                          {card.status === 'ENDED' && (
+                            <span className="border border-outline/50 bg-surface-container-low text-on-surface-variant/60 text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 font-mono uppercase">
+                              <span className="w-1.5 h-1.5 bg-on-surface-variant/30 rounded-full"></span>
+                              Ended Resolved
+                            </span>
+                          )}
+                          <span className="font-mono font-bold text-[8px] tracking-wider text-primary border border-primary/20 px-1.5 py-0.5 rounded uppercase">
+                            {card.drift}
+                          </span>
+                        </div>
+
+                        <div className="text-center">
+                          <h4 className="font-display font-extrabold text-sm text-on-surface leading-snug tracking-tight mb-1">
+                            {card.title}
+                          </h4>
+                          <p className="font-mono font-bold text-[8px] text-on-surface-variant/60 uppercase tracking-widest">
+                            24H VOL: {card.volume}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <button 
+                            disabled={card.status !== 'ACTIVE'}
+                            className={`py-2.5 rounded border transition-all flex flex-col items-center justify-center ${card.status === 'ACTIVE' ? 'border-outline bg-surface hover:border-primary cursor-pointer' : 'border-outline/25 bg-surface-variant/10 opacity-55'}`}
+                            onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift, card.realId)}
+                          >
+                            <span className="text-[7px] font-bold text-on-surface-variant mb-0.5">YES</span>
+                            <span className="font-extrabold text-bullish text-sm leading-none">{card.yesProb}%</span>
+                          </button>
+                          <button 
+                            disabled={card.status !== 'ACTIVE'}
+                            className={`py-2.5 rounded border transition-all flex flex-col items-center justify-center ${card.status === 'ACTIVE' ? 'border-outline bg-surface hover:border-primary cursor-pointer' : 'border-outline/25 bg-surface-variant/10 opacity-55'}`}
+                            onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift, card.realId)}
+                          >
+                            <span className="text-[7px] font-bold text-on-surface-variant mb-0.5">NO</span>
+                            <span className="font-extrabold text-bearish text-sm leading-none">{card.noProb}%</span>
+                          </button>
+                        </div>
+
+                        {card.status === 'COMING' && (
+                          <button disabled className="w-full bg-surface-container-high text-on-surface-variant/40 border border-outline-variant/60 py-2.5 rounded font-display font-bold text-[9px] tracking-[0.2em] uppercase">
+                            COMING SOON
+                          </button>
+                        )}
+                        {card.status === 'ACTIVE' && (
+                          <button 
+                            className="w-full bg-primary text-white py-2.5 rounded font-display font-bold text-[9px] tracking-[0.2em] uppercase hover:brightness-105"
+                            onClick={() => activateTerminalTrade(card.title, card.yesPrice, card.noPrice, card.confidence, card.volume, card.openInterest, card.drift, card.realId)}
+                          >
+                            PLACE PREDICTION
+                          </button>
+                        )}
+                        {card.status === 'ENDED' && (
+                          <button disabled className="w-full bg-surface-container-low text-on-surface-variant/30 border border-outline-variant/30 py-2.5 rounded font-display font-bold text-[9px] tracking-[0.2em] uppercase">
+                            MARKET RESOLVED
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="w-full py-8 flex flex-col items-center justify-center text-center p-6 bg-surface-variant/10 border border-dashed border-outline-variant rounded-xl">
                     <span className="material-symbols-outlined text-primary/30 text-3xl mb-2 animate-pulse">inventory_2</span>
                     <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase">NO MATCHING PREDICTIONS</p>
                   </div>

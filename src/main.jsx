@@ -10,17 +10,28 @@ import { config } from './config/wagmi'
 import App from './App.jsx'
 import './index.css'
 
+import useAppStore from './store/useAppStore'
+
 const queryClient = new QueryClient()
+
+function RainbowKitThemeBoundProvider({ children }) {
+  const isDarkMode = useAppStore((state) => state.isDarkMode);
+  return (
+    <RainbowKitProvider theme={isDarkMode ? darkTheme() : lightTheme()}>
+      {children}
+    </RainbowKitProvider>
+  );
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
+        <RainbowKitThemeBoundProvider>
           <BrowserRouter>
             <App />
           </BrowserRouter>
-        </RainbowKitProvider>
+        </RainbowKitThemeBoundProvider>
       </QueryClientProvider>
     </WagmiProvider>
   </StrictMode>,
