@@ -1,17 +1,9 @@
 import { ethers } from 'ethers';
 import { PrismaClient } from '@prisma/client';
+import { ProviderFactory } from './services/providerFactory';
+import { ContractFactory } from './services/contractFactory';
 
 const prisma = new PrismaClient();
-
-// Use the ABI elements we care about indexing
-const marketAbi = [
-  "event MarketCreated(uint256 indexed id, string title, string category, uint256 expiry, address creator)",
-  "event TradeRecorded(uint256 indexed marketId, address indexed user, string position, uint256 amount)",
-  "event MarketResolved(uint256 indexed marketId, bool outcome, address resolver)",
-  "event WinningsRedeemed(uint256 indexed marketId, address indexed user, uint256 amount)"
-];
-
-const CONTRACT_ADDRESS = process.env.VITE_MANTLE_CONTRACT_ADDRESS || "";
 
 export class IndexerService {
   private provider: ethers.JsonRpcProvider;
@@ -20,18 +12,17 @@ export class IndexerService {
   private isPolling: boolean = false;
 
   constructor() {
-    // Read from .env, fallback to Sepolia Testnet to avoid breaking current environment
-    const rpcUrl = process.env.MANTLE_RPC_URL || "https://rpc.sepolia.mantle.xyz";
-    this.provider = new ethers.JsonRpcProvider(rpcUrl);
-    this.contract = new ethers.Contract(CONTRACT_ADDRESS, marketAbi, this.provider);
+    this.provider = ProviderFactory.getProvider();
+    this.contract = ContractFactory.getContract('AiraMarketProtocol', this.provider);
   }
 
   async startIndexing() {
-    if (!CONTRACT_ADDRESS) {
-        console.error("[INDEXER] Missing VITE_MANTLE_CONTRACT_ADDRESS in .env");
+    const contractAddress = this.contract.target as string;
+    if (!contractAddress) {
+        console.error("[INDEXER] Missing contract address for AiraMarketProtocol");
         return;
     }
-    console.log(`[INDEXER] Starting real-time block polling indexer for contract ${CONTRACT_ADDRESS}...`);
+    console.log(`[INDEXER] Starting real-time block polling indexer for contract ${contractAddress}...`);
 
     try {
         const currentBlock = await this.provider.getBlockNumber();

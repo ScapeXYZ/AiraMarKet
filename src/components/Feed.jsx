@@ -3,9 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { feedCategories } from '../mocks/data';
 import { useReadContract } from 'wagmi';
+import { loadDeployment } from '../../deployments/loader';
+import { activeChainConfig } from '../lib/network';
 
-// Example ABI for listing markets
-const abi = [{"inputs":[],"name":"listMarkets","outputs":[{"components":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"uint256","name":"expiry","type":"uint256"},{"internalType":"uint256","name":"totalYesPool","type":"uint256"},{"internalType":"uint256","name":"totalNoPool","type":"uint256"},{"internalType":"address","name":"creator","type":"address"},{"internalType":"bool","name":"resolved","type":"bool"},{"internalType":"bool","name":"outcome","type":"bool"},{"internalType":"string","name":"title","type":"string"},{"internalType":"string","name":"category","type":"string"}],"internalType":"struct AiraMarketProtocol.Market[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"}];
+const deployment = loadDeployment('AiraMarketProtocol');
+const abi = deployment.abi;
+const contractAddress = deployment.address;
+
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -21,7 +25,7 @@ export default function Feed() {
 
   // Use wagmi to fetch markets
   const { data: liveMarkets } = useReadContract({
-    address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi,
     functionName: 'listMarkets',
     watch: true,
@@ -42,19 +46,19 @@ export default function Feed() {
           realId: id,
           title: m.title,
           category: m.category.toUpperCase(),
-          volume: `$${total.toFixed(2)} MNT`,
+          volume: `$${total.toFixed(2)} ${activeChainConfig.nativeCurrency.symbol}`,
           yesProb,
           noProb,
           yesPrice: yesProb / 100,
           noPrice: noProb / 100,
           confidence: "Live",
-          openInterest: `${total.toFixed(2)} MNT`,
+          openInterest: `${total.toFixed(2)} ${activeChainConfig.nativeCurrency.symbol}`,
           drift: "LIVE",
           status: m.resolved ? "ENDED" : "ACTIVE",
           passport: "https://images.unsplash.com/photo-1639762681485-074b7f4ec651?auto=format&fit=crop&q=80&w=200",
           bgImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9ZaIdCSD76vsMYol9iTeA3P-KQePR-wPwXlEf8HDGAcQXVLcWBTQf2XPSYlrNTDzYlAoOgq4IvPXuEZwitpqGSuLEoPVcX7-ucS_CmB7lUv1rFXuQqETHu6FcP44CbdbNERfV9UdIz-IYo_b2fCqdFHWsDXpdsbtPDhUbvxOqnaE4IuARVDI2c_81H_f9VcBGDMZamrZnDWlCu0pQWjFXdazF0kCZfwjb9g1siJ6jU8kdrt6XYa0L-4gC3h3_zaQkcZajNdL_5mY",
           nodeIcon: "https://lh3.googleusercontent.com/aida-public/AB6AXuC5mynRnO05PMYjJd4c9pATpp_CQNpzcuGCuynRG5rI2sR6fjElHLEmsj0uuq1_37kGszQW6Lm7Nx73hl71PgeFxr9oOyn14HpIVZkkfbHiEskuSrePFACjwxxNoJdO8xjTP0jpBN1bTi4K6IpZangC3HOfa0rNiJmVinhzBTn0HsixddoBCOCgjXN3d0SNJkz4EKnodR6fkkh14DscesLHVZ0wRgeEQKOqoC8cABi8GQ95kMVMGB4UgCFztlOQANyh7SsvMYkWoNA",
-          nodeName: "Mantle Oracle"
+          nodeName: `${activeChainConfig.networkName.split(' ')[0]} Oracle`
         };
       });
       setFeedCards(mappedMarkets.reverse());

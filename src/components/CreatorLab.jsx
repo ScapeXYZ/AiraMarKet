@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { trendingSuggestions } from '../mocks/data';
 import { useAccount, useWriteContract } from 'wagmi';
+import { loadDeployment } from '../../deployments/loader';
+import { activeChainConfig } from '../lib/network';
 
-// Example ABI
-const abi = [
-  { "inputs": [{ "internalType": "string", "name": "_title", "type": "string" }, { "internalType": "string", "name": "_category", "type": "string" }, { "internalType": "uint256", "name": "_resolutionTime", "type": "uint256" }, { "internalType": "string", "name": "_ipfsCID", "type": "string" }], "name": "createMarket", "outputs": [], "stateMutability": "payable", "type": "function" }
-];
+const deployment = loadDeployment('AiraMarketProtocol');
+const abi = deployment.abi;
+const contractAddress = deployment.address;
 
 export default function CreatorLab() {
   const navigate = useNavigate();
@@ -120,7 +121,7 @@ export default function CreatorLab() {
       const { parseEther } = await import('viem');
       
       const hash = await writeContractAsync({
-        address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi,
         functionName: 'createMarket',
         args: [market.title, market.category, expirySeconds, mockIpfsCID],

@@ -3,9 +3,9 @@ const fs = require("fs");
 require("dotenv").config();
 
 async function main() {
-    const contractAddress = process.env.VITE_MANTLE_CONTRACT_ADDRESS;
+    const contractAddress = process.env.CONTRACT_ADDRESS || process.env.VITE_CONTRACT_ADDRESS || process.env.VITE_MANTLE_CONTRACT_ADDRESS;
     if (!contractAddress) {
-        throw new Error("No VITE_MANTLE_CONTRACT_ADDRESS in .env");
+        throw new Error("No contract address configured (CONTRACT_ADDRESS or VITE_MANTLE_CONTRACT_ADDRESS)");
     }
 
     const [deployer] = await hre.ethers.getSigners();

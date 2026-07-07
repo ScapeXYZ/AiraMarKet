@@ -3,14 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { useAccount, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
+import { loadDeployment } from '../../deployments/loader';
 
-const abi = [
-  { "inputs": [{ "internalType": "uint256", "name": "_marketId", "type": "uint256" }], "name": "buyYes", "outputs": [], "stateMutability": "payable", "type": "function" },
-  { "inputs": [{ "internalType": "uint256", "name": "_marketId", "type": "uint256" }], "name": "buyNo", "outputs": [], "stateMutability": "payable", "type": "function" },
-  { "inputs": [{ "internalType": "uint256", "name": "_marketId", "type": "uint256" }], "name": "claimWinnings", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-  { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }, { "internalType": "address", "name": "", "type": "address" }], "name": "yesShares", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }, { "internalType": "address", "name": "", "type": "address" }], "name": "noShares", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
-];
+const deployment = loadDeployment('AiraMarketProtocol');
+const abi = deployment.abi;
+const contractAddress = deployment.address;
 
 export default function Terminal() {
   const navigate = useNavigate();
@@ -30,7 +27,7 @@ export default function Terminal() {
 
   // Wagmi Read Contracts for positions
   const { data: yesSharesData, refetch: refetchYes } = useReadContract({
-    address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi,
     functionName: 'yesShares',
     args: [activeMarket.realId, walletAddress],
@@ -38,7 +35,7 @@ export default function Terminal() {
   });
 
   const { data: noSharesData, refetch: refetchNo } = useReadContract({
-    address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi,
     functionName: 'noShares',
     args: [activeMarket.realId, walletAddress],
@@ -72,7 +69,7 @@ export default function Terminal() {
     if(!activeMarket.realId) return;
     try {
       const hash = await writeContractAsync({
-        address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi,
         functionName: 'claimWinnings',
         args: [activeMarket.realId]
@@ -98,7 +95,7 @@ export default function Terminal() {
        let gasLimit = undefined;
        try {
          const estimatedGas = await publicClient.estimateContractGas({
-           address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+           address: contractAddress,
            abi,
            functionName: selectedDirection === 'YES' ? 'buyYes' : 'buyNo',
            args: [activeMarket.realId],
@@ -113,7 +110,7 @@ export default function Terminal() {
        }
 
        const hash = await writeContractAsync({
-         address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+         address: contractAddress,
          abi,
          functionName: selectedDirection === 'YES' ? 'buyYes' : 'buyNo',
          args: [activeMarket.realId],
@@ -131,7 +128,7 @@ export default function Terminal() {
   const handleProposeResolution = async (outcome) => {
     try {
       const hash = await writeContractAsync({
-        address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: [
           ...abi,
           {
@@ -158,7 +155,7 @@ export default function Terminal() {
   const handleExecuteResolution = async () => {
     try {
       const hash = await writeContractAsync({
-        address: import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: [
           ...abi,
           {

@@ -12,6 +12,8 @@ import CreatorLab from './components/CreatorLab';
 import Terminal from './components/Terminal';
 import Portfolio from './components/Portfolio';
 
+import { activeChainConfig, getExplorerTxLink } from './lib/network';
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -173,15 +175,15 @@ function App() {
           {toast.hash && (
             <div className="mt-2 flex flex-col gap-1 border-t border-white/20 pt-2">
               <span className="text-[9px] font-mono opacity-60">
-                CONTRACT: {import.meta.env.VITE_MANTLE_CONTRACT_ADDRESS || "0xDD277CCB8cDa72D652CdcA4df09df5f2522fc846"}
+                CONTRACT: {activeChainConfig.contracts.marketProtocol}
               </span>
               <a 
-                href={`https://explorer.sepolia.mantle.xyz/tx/${toast.hash}`} 
+                href={getExplorerTxLink(toast.hash)} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-[10px] font-bold font-mono underline opacity-80 hover:opacity-100 flex items-center gap-1"
               >
-                VIEW ON MANTLE EXPLORER
+                VIEW ON EXPLORER
                 <span className="material-symbols-outlined text-[10px]">open_in_new</span>
               </a>
             </div>

@@ -1,10 +1,13 @@
 import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
+import { ProviderFactory } from './providerFactory';
+import { ContractFactory } from './contractFactory';
+import { loadDeployment } from '../../deployments/loader';
 dotenv.config({ path: '../../.env' });
 
 /**
- * Mantle Network Blockchain Oracle Service
- * Handles verifiable resolutions of markets on Mantle
+ * Verifiable Prediction Market Oracle Service
+ * Handles verifiable resolutions of markets on the configured blockchain network
  */
 export class MantleService {
     private provider: ethers.JsonRpcProvider;
@@ -12,8 +15,7 @@ export class MantleService {
     private contractAddress: string;
 
     constructor() {
-        const rpcUrl = process.env.MANTLE_RPC_URL || 'https://rpc.sepolia.mantle.xyz';
-        this.provider = new ethers.JsonRpcProvider(rpcUrl);
+        this.provider = ProviderFactory.getProvider();
         
         const pk = process.env.PRIVATE_KEY;
         if (!pk) {
@@ -21,19 +23,21 @@ export class MantleService {
              process.exit(1);
         }
         this.wallet = new ethers.Wallet(pk, this.provider);
-        this.contractAddress = process.env.VITE_MANTLE_CONTRACT_ADDRESS || "";
+        
+        // Load target contract address via deployment loader
+        const deployment = loadDeployment('AiraMarketProtocol');
+        this.contractAddress = deployment.address;
+        
         if (!this.contractAddress) {
-            console.warn("[MANTLE_SERVICE] VITE_MANTLE_CONTRACT_ADDRESS is not set. Oracle resolution will fail.");
+            console.warn("[MANTLE_SERVICE] Contract address is not configured. Oracle resolution will fail.");
         }
     }
 
     listenToEvents() {
         console.log(`[MANTLE_SERVICE] Connecting to smart contract events at ${this.contractAddress}`);
-        const abi = [
-            "event MarketCreated(uint256 indexed id, string title, string category, uint256 expiry, address creator)",
-            "event MarketResolved(uint256 indexed marketId, bool outcome, address resolver)"
-        ];
-        const marketContract = new ethers.Contract(this.contractAddress, abi, this.provider);
+        
+        // Instantiate contract using ContractFactory
+        const marketContract = ContractFactory.getContract('AiraMarketProtocol', this.provider);
         
         marketContract.on("MarketCreated", (id, title, category, expiry, creator) => {
             console.log(`\n[ON-CHAIN EVENT] New Market Created: ${title} (ID: ${id}) by ${creator}`);
@@ -48,12 +52,12 @@ export class MantleService {
         console.log(`[MANTLE_ORACLE] Attempting to resolve market ${marketId} on-chain with outcome: ${outcome ? 'YES' : 'NO'}`);
         
         try {
-            const abi = ["function resolveMarket(uint256 _marketId, bool _outcome) external"];
-            const marketContract = new ethers.Contract(this.contractAddress, abi, this.wallet);
+            // Obtain contract instance bound to signer wallet
+            const marketContract = ContractFactory.getContract('AiraMarketProtocol', this.wallet);
             
             // Execute real on-chain transaction
             const tx = await marketContract.resolveMarket(marketId, outcome);
-            console.log(`[MANTLE_ORACLE] Tx submitted to Mantle! Hash: ${tx.hash}`);
+            console.log(`[MANTLE_ORACLE] Tx submitted! Hash: ${tx.hash}`);
             
             await tx.wait();
             console.log(`[MANTLE_ORACLE] Resolution Confirmed for Market ID: ${marketId}`);

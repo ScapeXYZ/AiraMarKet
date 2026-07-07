@@ -1,0 +1,164 @@
+{
+  "address": "0xDD277CCB8cDa72D652CdcA4df09df5f2522fc846",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "id", "type": "uint256" },
+        { "indexed": false, "internalType": "string", "name": "title", "type": "string" },
+        { "indexed": false, "internalType": "string", "name": "category", "type": "string" },
+        { "indexed": false, "internalType": "uint256", "name": "expiry", "type": "uint256" },
+        { "indexed": false, "internalType": "address", "name": "creator", "type": "address" }
+      ],
+      "name": "MarketCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "marketId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+        { "indexed": false, "internalType": "string", "name": "position", "type": "string" },
+        { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+      ],
+      "name": "TradeRecorded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "marketId", "type": "uint256" },
+        { "indexed": false, "internalType": "bool", "name": "outcome", "type": "bool" },
+        { "indexed": false, "internalType": "address", "name": "resolver", "type": "address" }
+      ],
+      "name": "MarketResolved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "uint256", "name": "marketId", "type": "uint256" },
+        { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+      ],
+      "name": "WinningsRedeemed",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      ],
+      "name": "buyYes",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      ],
+      "name": "buyNo",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      ],
+      "name": "claimWinnings",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" },
+        { "internalType": "address", "name": "", "type": "address" }
+      ],
+      "name": "yesShares",
+      "outputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" },
+        { "internalType": "address", "name": "", "type": "address" }
+      ],
+      "name": "noShares",
+      "outputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "listMarkets",
+      "outputs": [
+        {
+          "components": [
+            { "internalType": "uint256", "name": "id", "type": "uint256" },
+            { "internalType": "uint256", "name": "expiry", "type": "uint256" },
+            { "internalType": "uint256", "name": "totalYesPool", "type": "uint256" },
+            { "internalType": "uint256", "name": "totalNoPool", "type": "uint256" },
+            { "internalType": "address", "name": "creator", "type": "address" },
+            { "internalType": "bool", "name": "resolved", "type": "bool" },
+            { "internalType": "bool", "name": "outcome", "type": "bool" },
+            { "internalType": "string", "name": "title", "type": "string" },
+            { "internalType": "string", "name": "category", "type": "string" }
+          ],
+          "internalType": "struct AiraMarketProtocol.Market[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "string", "name": "_title", "type": "string" },
+        { "internalType": "string", "name": "_category", "type": "string" },
+        { "internalType": "uint256", "name": "_expiry", "type": "uint256" },
+        { "internalType": "string", "name": "_ipfsCID", "type": "string" }
+      ],
+      "name": "createMarket",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "_marketId", "type": "uint256" },
+        { "internalType": "bool", "name": "_outcome", "type": "bool" }
+      ],
+      "name": "resolveMarket",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "_marketId", "type": "uint256" },
+        { "internalType": "bool", "name": "_outcome", "type": "bool" }
+      ],
+      "name": "proposeResolution",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      ],
+      "name": "executeResolution",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+}
